@@ -5,7 +5,13 @@ from warnings import warn
 
 DATADR = '/Users/eddie/Dropbox/Research/py_lib/data_sets/scotus/'
 DATAFILE = 'SCDB_2014_01_justiceCentered_Citation.csv'
-
+COURT_NAMES = ['waite1','waite2','waite3','FMVinsonVinson','SMintonVinson',         
+               'PStewartWarren','AJGoldbergWarren','AFortasWarren','TMarshallWarren', 
+               'HABlackmunBurger','WHRehnquistBurger','JPStevensBurger']              
+NICE_COURT_NAMES = ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',       
+                    'Minton/Vinson',                                                     
+                    'Stewart/Warren','Goldberg/Warren','Fortas/Warren','Marshall/Warren',
+                    'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger']               
 class ScotusData():
     @staticmethod
     def rebase_data():
@@ -47,3 +53,22 @@ class ScotusData():
     def justice_names():
         return pickle.load(open(DATADR+'justiceNames.p','rb'))['justiceNames']
 
+    @staticmethod
+    def load_conf_report_votes(courtIx):
+        import scipy.io as sio
+        n=9
+        # Must load voting data from file to see which votes turn into which.
+        name = COURT_NAMES[courtIx]
+        indata = sio.loadmat(DATADR+'%s_confra_idevotes' %name)
+        for k in indata.keys():
+            if k.rfind('all')>=0:
+                if k.rfind('conf')>=0:
+                    confv = indata[k].astype(float)
+                    confv[confv==-1] = np.nan
+                else:
+                    finv = indata[k].astype(float)
+                    finv[finv==-1] = np.nan
+        # Take only votes with complete records on both sides.
+        fullVotesIx = np.logical_and(np.sum(np.isnan(confv)==0,1)==9, np.sum(np.isnan(finv)==0,1)==9)
+
+        return confv,finv,fullVotesIx
