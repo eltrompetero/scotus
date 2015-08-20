@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import cPickle as pickle
 from warnings import warn
+import entropy.entropy as entropy
 
 DATADR = '/Users/eddie/Dropbox/Research/py_lib/data_sets/scotus/'
 DATAFILE = 'SCDB_2014_01_justiceCentered_Citation.csv'
@@ -72,3 +73,40 @@ class ScotusData():
         fullVotesIx = np.logical_and(np.sum(np.isnan(confv)==0,1)==9, np.sum(np.isnan(finv)==0,1)==9)
 
         return confv,finv,fullVotesIx
+
+    @staticmethod
+    def pairwise_maxent_couplings(courtName,sym,formulation,fullVote=True,conference=False):
+        """
+        Return solutions to pairwise maxent model.
+        2015-08-20
+
+        Params:
+        -------
+        courtName (str)
+            in nice format
+        sym (bool)
+            True returns solutions on symmetrized data
+        formulation (str)
+            '0' or '1' for {0,1} and {-1,1}
+        fullVote (True,bool)
+            in cases where data is missing, return solution on only complete votes if True
+        conference (False,bool)
+            if need conference votes set True
+        """
+        if courtName in NICE_COURT_NAMES:
+            ix = NICE_COURT_NAMES.index(courtName)
+            if conference:
+                if sym:
+                    Js = pickle.load(open(DATADR+'J_conf_and_report_fullVotes.p','rb'))['JConfSym']
+                else:
+                    Js = pickle.load(open(DATADR+'J_conf_and_report_fullVotes.p','rb'))['JConf']
+            else:
+                if sym:
+                    Js = pickle.load(open(DATADR+'J_conf_and_report_fullVotes.p','rb'))['JReportSym']
+                else:
+                    Js = pickle.load(open(DATADR+'J_conf_and_report_fullVotes.p','rb'))['JReport']
+            if formulation=='1':
+                return entropy.convert_params(Js[ix][:9],Js[ix][9:],concat=True,convertTo='11')
+            else:
+                return Js[ix]
+        return 
