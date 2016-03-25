@@ -3,17 +3,18 @@ import pandas as pd
 import cPickle as pickle
 from warnings import warn
 import entropy.entropy as entropy
+import os
 
-DATADR = '/Users/eddie/Dropbox/Research/py_lib/data_sets/scotus/'
+DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus/'
 DATAFILE = 'SCDB_2014_01_justiceCentered_Citation.csv'
 COURT_NAMES = ['waite1','waite2','waite3','FMVinsonVinson','SMintonVinson',         
                'PStewartWarren','AJGoldbergWarren','AFortasWarren','TMarshallWarren', 
                'HABlackmunBurger','WHRehnquistBurger','JPStevensBurger']              
 NICE_COURT_NAMES = ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',       
-                    'Minton/Vinson',                                                     
+                    'Minton/Vinson',
                     'Stewart/Warren','Goldberg/Warren','Fortas/Warren','Marshall/Warren',
                     'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger']               
-class ScotusData():
+class ScotusData(object):
     @staticmethod
     def rebase_data():
         """2015-06-27"""
