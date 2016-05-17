@@ -55,7 +55,8 @@ def setup_canada(keepv2=True):
             courts.append({})
             courts[-1]['justices'] = [c.split('_')[0] for c in f.columns]
             courts[-1]['votes'] = f.values
-            
+    
+    print "Overwriting Canadian court information..."
     hickle.dump({'courts':courts},open('canada_full_court_votes.hkl','w'))
 
 
