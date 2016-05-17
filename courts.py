@@ -15,7 +15,7 @@ class Courts(object):
     @classmethod
     def get_court(self,name):
         if 'can' in name.lower():
-            courts = hickle.load(open('%s/%s'%(DATADR,'canada_full_court_votes.hkl'),'r'))['courts']
+            courts = pickle.load(open('%s/%s'%(DATADR,'canada_full_court_votes.p'),'r'))['courts']
             return courts
         else:
             raise Exception("Invalid court option.")
@@ -23,8 +23,9 @@ class Courts(object):
     @classmethod
     def save_court(self,name,courts):
         if 'can' in name.lower():
-            courts = hickle.dump({'courts':courts},
-                                 open('%s/%s'%(DATADR,'canada_full_court_votes.hkl'),'w'))
+            os.remove('%s/%s'%(DATADR,'canada_full_court_votes.p'))
+            courts = pickle.dump({'courts':courts},
+                                 open('%s/%s'%(DATADR,'canada_full_court_votes.p'),'w'))
         else:
             raise Exception("Invalid court option.")
 

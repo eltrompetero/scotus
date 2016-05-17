@@ -1,6 +1,6 @@
 from __future__ import division
 import pandas as pd
-import hickle
+import hickle,pickle
 import numpy as np
 
 def setup_canada(keepv2=True):
@@ -57,7 +57,7 @@ def setup_canada(keepv2=True):
             courts[-1]['votes'] = f.values
     
     print "Overwriting Canadian court information..."
-    hickle.dump({'courts':courts},open('canada_full_court_votes.hkl','w'))
+    pickle.dump({'courts':courts},open('canada_full_court_votes.p','w'),-1)
 
 
 if __name__=='__main__':
