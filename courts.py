@@ -25,7 +25,6 @@ class Courts(object):
         if 'can' in name.lower():
             courts = hickle.dump({'courts':courts},
                                  open('%s/%s'%(DATADR,'canada_full_court_votes.hkl'),'w'))
-            return courts
         else:
             raise Exception("Invalid court option.")
 
