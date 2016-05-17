@@ -1,17 +1,28 @@
+from __future__ import division
 import pandas as pd
 import hickle
+import numpy as np
 
-def setup_canada():
+def setup_canada(keepv2=True):
     """2016-05-16"""
     df = pd.read_stata('original_data_files/HCJD_Canada.dta',convert_categoricals=False)
 
     # Just get the votes. Thes ecolumns end in v1 and v2 (votes on issues 1 and 2).
     colsToKeep = np.sort([c for c in df.columns if ('v1' in c or 'v2' in c)])
     df = df[colsToKeep]
-
-    # Only keeping votes on issues 1...
+    
     colsToKeep = np.sort([c for c in df.columns if ('v1' in c)])
-    df = df[colsToKeep]
+    if keepv2:
+        # Add votes on the second issue as extra votes.
+        colsToAddToBottom = np.sort([c for c in df.columns if ('v2' in c)])
+        df1 = df[colsToKeep]
+        df2 = df[colsToAddToBottom]
+        df2.columns = [c.replace('2','1') for c in df2.columns]
+        
+        df = pd.concat([df1,df2])
+    else:
+        # Only keep votes on issue 1.
+        df = df[colsToKeep]
 
 
     # Find all natural courts that had full votes by looking for groups of nine voters. 
@@ -21,7 +32,7 @@ def setup_canada():
 
     voteStrings = []
     for i in fullVotesIx:
-        voteStrings.append( ' '.join([str(i) for i in np.where(np.isnan(df.loc[i,:])==0)[0]]) )
+        voteStrings.append( ' '.join([str(i) for i in np.where(np.isnan(df.iloc[i,:])==0)[0]]) )
 
     voteStrings = np.unique(voteStrings)
 
