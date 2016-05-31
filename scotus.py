@@ -6,7 +6,8 @@ import entropy.entropy as entropy
 import os
 
 DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus/'
-DATAFILE = 'SCDB_2014_01_justiceCentered_Citation.csv'
+#DATAFILE = 'SCDB_2014_01_justiceCentered_Citation.csv'
+DATAFILE = 'SCDB_2015_03_justiceCentered_Citation.csv'
 COURT_NAMES = ['waite1','waite2','waite3','FMVinsonVinson','SMintonVinson',         
                'PStewartWarren','AJGoldbergWarren','AFortasWarren','TMarshallWarren', 
                'HABlackmunBurger','WHRehnquistBurger','JPStevensBurger']              
@@ -111,3 +112,8 @@ class ScotusData(object):
             else:
                 return Js[ix]
         return 
+
+if __name__=='__main__':
+    scotusdata = ScotusData()
+    print "Rebasing data from %s"%DATAFILE
+    scotusdata.rebase_data()
