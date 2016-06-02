@@ -18,7 +18,10 @@ NICE_COURT_NAMES = ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',
 class ScotusData(object):
     @staticmethod
     def rebase_data():
-        """2015-06-27"""
+        """
+        Reload data from database from supremecourtdatabase.org
+        2015-06-27
+        """
         warn("This may be memory intensive.")
 
         table = pd.read_csv(DATADR+DATAFILE)
@@ -58,6 +61,9 @@ class ScotusData(object):
 
     @staticmethod
     def load_conf_report_votes(courtIx):
+        """
+        Load set of conference and report votes.
+        """
         import scipy.io as sio
         n=9
         # Must load voting data from file to see which votes turn into which.
@@ -71,6 +77,7 @@ class ScotusData(object):
                 else:
                     finv = indata[k].astype(float)
                     finv[finv==-1] = np.nan
+
         # Take only votes with complete records on both sides.
         fullVotesIx = np.logical_and(np.sum(np.isnan(confv)==0,1)==9, np.sum(np.isnan(finv)==0,1)==9)
 
