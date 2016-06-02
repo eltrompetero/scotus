@@ -78,7 +78,7 @@ class ScotusData(object):
                     finv = indata[k].astype(float)
                     finv[finv==-1] = np.nan
 
-        # Take only votes with complete records on both sides.
+        # Get index of votes with complete records on both sides.
         fullVotesIx = np.logical_and(np.sum(np.isnan(confv)==0,1)==9, np.sum(np.isnan(finv)==0,1)==9)
 
         return confv,finv,fullVotesIx
