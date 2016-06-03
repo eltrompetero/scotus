@@ -151,6 +151,23 @@ class ScotusData(object):
         else:
             raise Exception("Court not found.")
         return 
+    
+    @classmethod
+    def save_couplings(self,name,couplings):
+        """
+        2016-06-03
+
+        Params:
+        -------
+        name (str)
+            String identifying the court. Should include a forward slash between junior and chief justices.
+        couplings (dict)
+            Dictionary with fields 'JConf', 'JConfSym', 'JReport', 'JReportSym'
+        """
+        print "Make sure to append court to the end of NICE_COURT_NAMES."
+        solns = pickle.load(open(DATADR+'J_by_court.p','rb'))
+        solns[name] = couplings
+        pickle.dump(solns,open(DATADR+'J_by_court.p','wb'),-1)
 
 if __name__=='__main__':
     scotusdata = ScotusData()
