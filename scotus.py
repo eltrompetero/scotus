@@ -63,6 +63,17 @@ class ScotusData(object):
     def load_conf_report_votes(courtIx):
         """
         Load set of conference and report votes.
+
+        Params:
+        -------
+        courtIx (int)
+
+        Value:
+        ------
+        confvotes
+        reportvotes
+        fullVotesIx
+            Votes with full votes in both conference and report votes.
         """
         import scipy.io as sio
         n=9
