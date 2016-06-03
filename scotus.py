@@ -14,7 +14,10 @@ COURT_NAMES = ['waite1','waite2','waite3','FMVinsonVinson','SMintonVinson',
 NICE_COURT_NAMES = ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',       
                     'Minton/Vinson',
                     'Stewart/Warren','Goldberg/Warren','Fortas/Warren','Marshall/Warren',
-                    'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger']               
+                    'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger',
+                    'Kennedy/Rehnquist','Breyer/Rehnquist',
+                    'Kagan/Roberts']
+
 class ScotusData(object):
     @staticmethod
     def rebase_data():
@@ -113,7 +116,7 @@ class ScotusData(object):
         conference (False,bool)
             if need conference votes set True
         """
-        if courtName in NICE_COURT_NAMES:
+        if courtName in NICE_COURT_NAMES[:12]:
             ix = NICE_COURT_NAMES.index(courtName)
             if conference:
                 if sym:
@@ -129,6 +132,24 @@ class ScotusData(object):
                 return entropy.convert_params(Js[ix][:9],Js[ix][9:],concat=True,convertTo='11')
             else:
                 return Js[ix]
+        elif courtName in NICE_COURT_NAMES[12:]:
+            J = pickle.load(open(DATADR+'J_by_court.p','rb'))[''.join(courtName.split('/'))]
+            if conference:
+                if sym:
+                    J = J['JconfSym']
+                else:
+                    J = J['Jconf']
+            else:
+                if sym:
+                    J = J['JReportSym']
+                else:
+                    J = J['JReport']
+            if formulation=='1':
+                return entropy.convert_params(J[:9],J[9:],concat=True,convertTo='11')
+            else:
+                return J
+        else:
+            raise Exception("Court not found.")
         return 
 
 if __name__=='__main__':
