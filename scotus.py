@@ -14,8 +14,8 @@ COURT_NAMES = ['waite1','waite2','waite3','FMVinsonVinson','SMintonVinson',
 NICE_COURT_NAMES = ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',       
                     'Minton/Vinson',
                     'Stewart/Warren','Goldberg/Warren','Fortas/Warren','Marshall/Warren',
-                    'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger',
-                    'Kennedy/Rehnquist','Breyer/Rehnquist',
+                    'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger','Connor/Burger',
+                    'Scalia/Rehnquist','Souter/Rehnquist','Thomas/Rehnquist','Kennedy/Rehnquist','Breyer/Rehnquist',
                     'Kagan/Roberts']
 
 class ScotusData(object):
@@ -116,7 +116,10 @@ class ScotusData(object):
         conference (False,bool)
             if need conference votes set True
         """
-        if courtName in NICE_COURT_NAMES[:12]:
+        if courtName in ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',       
+                         'Minton/Vinson',
+                         'Stewart/Warren','Goldberg/Warren','Fortas/Warren','Marshall/Warren',
+                         'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger']:
             ix = NICE_COURT_NAMES.index(courtName)
             if conference:
                 if sym:
@@ -132,7 +135,7 @@ class ScotusData(object):
                 return entropy.convert_params(Js[ix][:9],Js[ix][9:],concat=True,convertTo='11')
             else:
                 return Js[ix]
-        elif courtName in NICE_COURT_NAMES[12:]:
+        elif courtName in NICE_COURT_NAMES:
             J = pickle.load(open(DATADR+'J_by_court.p','rb'))[''.join(courtName.split('/'))]
             if conference:
                 if sym:
