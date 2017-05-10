@@ -2,6 +2,7 @@ from __future__ import division
 import pandas as pd
 import hickle,pickle
 import numpy as np
+from datetime import datetime
 
 def setup_canada(keepv2=True):
     """2016-05-16"""
@@ -58,6 +59,96 @@ def setup_canada(keepv2=True):
     
     print "Overwriting Canadian court information..."
     pickle.dump({'courts':courts},open('canada_full_court_votes.p','w'),-1)
+
+def setup_vinwar():
+    df = pickle.load(open('vinwar_stata_EDL.xlsx.p','rb'))['df']
+    names = np.sort(['mar','fort','gold','bw','stwt','whit','brn','har','mint','clk',
+                     'burt','jack','doug','frk','reed','blk','war','rut','mur','vin'])
+
+    print "Unique vote types for column 2"
+    print np.unique(df['votetyp2'].dropna())
+    # Find merits votes.
+    mrtsString = ['MRTS','1RTS']
+    meritsIx = ((df['votetyp2']==mrtsString[0]) | (df['votetyp2']==mrtsString[1])).values
+
+    print "Unique vote types for column 2"
+    print np.unique(df['votetyp3'].dropna())
+    # Find reports votes.
+    rptsIx = (df['votetyp3']=='REPT').values
+
+    # Only keep cases where we have either a report or final vote on the merits.
+    anyVoteIx = meritsIx | rptsIx
+    df = df.ix[anyVoteIx]
+
+    # Collect report votes.
+    v = []
+    for n in names:
+        v.append( df[n+'3r'].values )
+    v = np.vstack(v).T
+    rptVotes = pd.DataFrame(v,columns=names)
+
+    v = []
+    for n in names:
+        v.append( df[n+'3dir'].values )
+    v = np.vstack(v).T
+    rptIdeVotes = pd.DataFrame(v,columns=names)
+
+
+    # Collect conference votes.
+    v = []
+    for n in names:
+        v.append( df[n+'2r'].values )
+    v = np.vstack(v).T
+    confVotes = pd.DataFrame(v,columns=names)
+
+    v = []
+    for n in names:
+        v.append( df[n+'2dir'].values )
+    v = np.vstack(v).T
+    confIdeVotes = pd.DataFrame(v,columns=names)
+
+    confVoteDate = df['votedat2'].values
+    rptVoteDate = df['votedat3'].values
+    confVoteDate[confVoteDate=='1582-10-14'] = datetime(1900,1,1,0,0)
+    rptVoteDate[rptVoteDate=='1582-10-14'] = datetime(1900,1,1,0,0)
+
+    # Binarize the votes.===========================
+    # First remove the nans.
+    rptVotes.fillna('',inplace=True)
+    rptIdeVotes.fillna('',inplace=True)
+    confVotes.fillna('',inplace=True)
+    confIdeVotes.fillna('',inplace=True)
+
+    # Make sure we only have binary votes.
+    print "Confirm that there are only two kinds of votes."
+    print np.unique(rptVotes)
+    print np.unique(rptIdeVotes)
+    print np.unique(confVotes)
+    print np.unique(confIdeVotes)
+
+    # Replace votes.
+    # deny/affirm -1, grant/reverse 1
+    # conservative -1, liberal 1
+    rptVotes.replace('deny/affirm',-1,inplace=True)
+    rptVotes.replace('grant/reverse',1,inplace=True)
+    rptVotes.replace('',0,inplace=True)
+
+    rptIdeVotes.replace('conservative',-1,inplace=True)
+    rptIdeVotes.replace('liberal',1,inplace=True)
+    rptIdeVotes.replace('',0,inplace=True)
+
+    confVotes.replace('deny/affirm',-1,inplace=True)
+    confVotes.replace('grant/reverse',1,inplace=True)
+    confVotes.replace('',0,inplace=True)
+
+    confIdeVotes.replace('conservative',-1,inplace=True)
+    confIdeVotes.replace('liberal',1,inplace=True)
+    confIdeVotes.replace('',0,inplace=True)
+
+    pickle.dump({'rptVotes':rptVotes,'rptIdeVotes':rptIdeVotes,
+                 'confVotes':confVotes,'confIdeVotes':confIdeVotes,
+                 'confVoteDate':confVoteDate,'rptVoteDate':rptVoteDate},
+                open('warren_conf_votes.p','wb'),-1)
 
 
 if __name__=='__main__':
