@@ -6,8 +6,7 @@ import entropy.entropy as entropy
 import os
 
 DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus/'
-#DATAFILE = 'SCDB_2014_01_justiceCentered_Citation.csv'
-DATAFILE = 'SCDB_2015_03_justiceCentered_Citation.csv'
+DATAFILE = 'SCDB_2016_01_justiceCentered_Citation.csv'
 COURT_NAMES = ['waite1','waite2','waite3','FMVinsonVinson','SMintonVinson',         
                'PStewartWarren','AJGoldbergWarren','AFortasWarren','TMarshallWarren', 
                'HABlackmunBurger','WHRehnquistBurger','JPStevensBurger']              
@@ -17,6 +16,60 @@ NICE_COURT_NAMES = ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',
                     'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger','Connor/Burger',
                     'Scalia/Rehnquist','Souter/Rehnquist','Thomas/Rehnquist','Kennedy/Rehnquist','Breyer/Rehnquist',
                     'Kagan/Roberts']
+
+
+class ConfVotesData(object):
+    def __init__(self):
+        """
+        For easy access to pairs of conference votes on the merits and the final report votes.
+
+        Fields:
+        -------
+        mrtVotesByCourt
+            Extra merit votes listed chronologically by column before the final conference vote.
+        confVotesByCourt
+            Final conference votes.
+        confIdeVotesByCourt
+        rptVotesByCourt
+        rptIdeVotesByCourt
+        justicesByCourt
+        courts
+            List of natural court titles.
+
+        Methods:
+        --------
+        conf_rpt()
+        """
+        data = pickle.load(open(DATADR+'/warren_conf_votes_bycourt.p','rb'))
+        self.mrtVotesByCourt = data['mrtVotesByCourt']
+        self.confVotesByCourt = data['confVotesByCourt']
+        self.confIdeVotesByCourt = data['confIdeVotesByCourt']
+        self.justicesByCourt = data['justicesByCourt']
+        self.rptVotesByCourt = data['rptVotesByCourt']
+        self.rptIdeVotesByCourt = data['rptIdeVotesByCourt']
+        self.justiceIxByCourt = data['justiceIxByCourt']
+        
+        self.courts = self.mrtVotesByCourt.keys()
+    
+    def conf_rpt(self,ctName,ide=True,extraConf=False):
+        """
+        Return a pair of final conference and report votes for a specified court.
+
+        Params:
+        -------
+        ctName (str)
+        ide (bool=True)
+        extraConf (bool=False)
+        """
+        if ide:
+            toReturn = [self.confIdeVotesByCourt[ctName],self.rptIdeVotesByCourt[ctName]]
+        else:
+            toReturn = [self.confVotesByCourt[ctName],self.rptVotesByCourt[ctName]]
+
+        if extraConf:
+            toReturn.append(self.mrtVotesByCourt[ctName])
+        return toReturn
+
 
 class ScotusData(object):
     @staticmethod
@@ -115,7 +168,14 @@ class ScotusData(object):
             in cases where data is missing, return solution on only complete votes if True
         conference (False,bool)
             if need conference votes set True
+
+        Returns:
+        --------
+        J
         """
+        if type(formulation) is int:
+            formulation = str(formulation)
+
         if courtName in ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',       
                          'Minton/Vinson',
                          'Stewart/Warren','Goldberg/Warren','Fortas/Warren','Marshall/Warren',
@@ -153,7 +213,6 @@ class ScotusData(object):
                 return J
         else:
             raise Exception("Court not found.")
-        return 
     
     @classmethod
     def save_couplings(self,name,couplings):
@@ -171,6 +230,14 @@ class ScotusData(object):
         solns = pickle.load(open(DATADR+'J_by_court.p','rb'))
         solns[name] = couplings
         pickle.dump(solns,open(DATADR+'J_by_court.p','wb'),-1)
+
+    def oct2015(self):
+        """
+        Load October 2015 term during which Scalia died. Data from scotus blog statpack.
+        +1 is vote with majority and -1 is vote against majority. 0 is recusal.
+        """
+        df = pd.read_csv('%s/%s'%(DATADR,'stat_pack_october_2015.csv'))
+        return df.ix[:,1:]
 
 if __name__=='__main__':
     scotusdata = ScotusData()

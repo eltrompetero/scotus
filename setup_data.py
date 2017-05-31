@@ -205,6 +205,8 @@ def bin_mrt_votes(mrtVotes):
                     i[ix] = 1
                 elif j=='deny/affirm':
                     i[ix] = -1
+                else:
+                    i[ix] = 0
 
 def fix_bad_mrt_votes(mrtVotes):
     for v in mrtVotes:
