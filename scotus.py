@@ -235,6 +235,8 @@ class ScotusData(object):
         """
         Load October 2015 term during which Scalia died. Data from scotus blog statpack.
         +1 is vote with majority and -1 is vote against majority. 0 is recusal.
+
+        This data is already in the SCDB.
         """
         df = pd.read_csv('%s/%s'%(DATADR,'stat_pack_october_2015.csv'))
         return df.ix[:,1:]
