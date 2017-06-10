@@ -78,8 +78,6 @@ class ScotusData(object):
         Reload data from database from supremecourtdatabase.org
         2015-06-27
         """
-        warn("This may be memory intensive.")
-
         table = pd.read_csv(DATADR+DATAFILE)
         
         # Recase table to be caseid by justice vote.
@@ -95,9 +93,9 @@ class ScotusData(object):
         
         justiceNames = np.unique(table.justiceName)
 
-        pickle.dump( {'justiceNames':justiceNames}, open(DATADR+'justiceNames.p','wb') )
+        pickle.dump( {'justiceNames':justiceNames}, open(DATADR+'justiceNames.p','wb'),-1 )
         pickle.dump( {'voteTable':voteTable,'dirVoteTable':dirVoteTable,'majVoteTable':majVoteTable},
-                    open(DATADR+'vote_tables.p','wb'))
+                    open(DATADR+'vote_tables.p','wb'),-1 )
 
     @staticmethod
     def majVoteTable():
