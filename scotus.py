@@ -91,11 +91,16 @@ class ScotusData(object):
         subTable = table.loc[:,['caseId','justiceName','majority']]
         majVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
         
+        issueTable = table.loc[:,['caseId','issue']]
+        issueTable = pd.pivot_table( issueTable,index='caseId',fill_value=np.nan )
+
         justiceNames = np.unique(table.justiceName)
 
         pickle.dump( {'justiceNames':justiceNames}, open(DATADR+'justiceNames.p','wb'),-1 )
         pickle.dump( {'voteTable':voteTable,'dirVoteTable':dirVoteTable,'majVoteTable':majVoteTable},
                     open(DATADR+'vote_tables.p','wb'),-1 )
+        pickle.dump( {'issueTable':issueTable},
+                    open(DATADR+'case_info_tables.p','wb'),-1) 
 
     @staticmethod
     def majVoteTable():
