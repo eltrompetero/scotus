@@ -115,6 +115,10 @@ class ScotusData(object):
         return pickle.load(open(DATADR+'vote_tables.p','rb'))['voteTable']
 
     @staticmethod
+    def issueTable():
+        return pickle.load(open(DATADR+'case_info_tables.p','rb'))['issueTable']
+
+    @staticmethod
     def justice_names():
         return pickle.load(open(DATADR+'justiceNames.p','rb'))['justiceNames']
 
