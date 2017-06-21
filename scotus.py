@@ -72,55 +72,42 @@ class ConfVotesData(object):
 
 
 class ScotusData(object):
+    def __init__(self,rebase=False):
+        if (not os.path.isfile(DATADR+'scotus_table.p')) or rebase:
+            self.rebase_data()
+        self.table = pickle.load(open(DATADR+'scotus_table.p','rb'))['table']
+
     @staticmethod
     def rebase_data():
         """
         Reload data from database from supremecourtdatabase.org
-        2015-06-27
         """
         table = pd.read_csv(DATADR+DATAFILE)
-        
-        # Recase table to be caseid by justice vote.
-        # Get the part of the table that we wish to pivot.
-        subTable = table.loc[:,['caseId','justiceName','vote']]
-        voteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
-
-        subTable = table.loc[:,['caseId','justiceName','direction']]
-        dirVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
-
-        subTable = table.loc[:,['caseId','justiceName','majority']]
-        majVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
-        
-        issueTable = table.loc[:,['caseId','issue']]
-        issueTable = pd.pivot_table( issueTable,index='caseId',fill_value=np.nan )
-
-        justiceNames = np.unique(table.justiceName)
-
-        pickle.dump( {'justiceNames':justiceNames}, open(DATADR+'justiceNames.p','wb'),-1 )
-        pickle.dump( {'voteTable':voteTable,'dirVoteTable':dirVoteTable,'majVoteTable':majVoteTable},
-                    open(DATADR+'vote_tables.p','wb'),-1 )
-        pickle.dump( {'issueTable':issueTable},
-                    open(DATADR+'case_info_tables.p','wb'),-1) 
-
-    @staticmethod
-    def majVoteTable():
-        return pickle.load(open(DATADR+'vote_tables.p','rb'))['majVoteTable']
-
-    @staticmethod
-    def dirVoteTable():
-        return pickle.load(open(DATADR+'vote_tables.p','rb'))['dirVoteTable']
+        pickle.dump({'table':table},open(DATADR+'scotus_table.p','wb'),-1)
     
-    @staticmethod
-    def voteTable():
-        return pickle.load(open(DATADR+'vote_tables.p','rb'))['voteTable']
+    def majVoteTable(self):
+        subTable = self.table.loc[:,['caseId','justiceName','majority']]
+        majVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+        return majVoteTable
 
-    @staticmethod
-    def issueTable():
-        return pickle.load(open(DATADR+'case_info_tables.p','rb'))['issueTable']
+    def dirVoteTable(self):
+        subTable = self.table.loc[:,['caseId','justiceName','direction']]
+        dirVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+        return dirVoteTable
+    
+    def voteTable(self):
+        subTable = self.table.loc[:,['caseId','justiceName','vote']]
+        voteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+        return voteTable
 
-    @staticmethod
-    def justice_names():
-        return pickle.load(open(DATADR+'justiceNames.p','rb'))['justiceNames']
+    def issueTable(self):
+        issueTable = self.table.loc[:,['caseId','issue']]
+        issueTable = pd.pivot_table( issueTable,index='caseId',fill_value=np.nan )
+        return issueTable
+
+    def justice_names(self):
+        justiceNames = np.unique(self.table.justiceName)
+        return justiceNames
 
     @staticmethod
     def load_conf_report_votes(courtIx):
@@ -249,6 +236,5 @@ class ScotusData(object):
         return df.ix[:,1:]
 
 if __name__=='__main__':
-    scotusdata = ScotusData()
     print "Rebasing data from %s"%DATAFILE
-    scotusdata.rebase_data()
+    scotusdata = ScotusData(rebase=True)
