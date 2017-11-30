@@ -6,7 +6,6 @@ import entropy.entropy as entropy
 import os
 
 DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus/'
-DATAFILE = 'SCDB_2016_01_justiceCentered_Citation.csv'
 COURT_NAMES = ['waite1','waite2','waite3','FMVinsonVinson','SMintonVinson',         
                'PStewartWarren','AJGoldbergWarren','AFortasWarren','TMarshallWarren', 
                'HABlackmunBurger','WHRehnquistBurger','JPStevensBurger']              
@@ -72,18 +71,25 @@ class ConfVotesData(object):
 
 
 class ScotusData(object):
-    def __init__(self,rebase=False):
-        if (not os.path.isfile(DATADR+'scotus_table.p')) or rebase:
-            self.rebase_data()
-        self.table = pickle.load(open(DATADR+'scotus_table.p','rb'))['table']
+    def __init__(self,rebase=False,legacy=False):
+        if legacy:
+            self.fname = DATADR+'scotus_table_legacy.p'
+            self.datafile = 'SCDB_Legacy_04_justiceCentered_Citation.csv'
+        else:
+            self.fname = DATADR+'scotus_table.p'
+            self.datafile = 'SCDB_2016_01_justiceCentered_Citation.csv'
 
-    @staticmethod
-    def rebase_data():
+        if (not os.path.isfile(self.fname)) or rebase:
+            self.rebase_data()
+        self.table = pickle.load(open(self.fname,'rb'))['table']
+        self.setup_MQ_score()
+
+    def rebase_data(self):
         """
         Reload data from database from supremecourtdatabase.org
         """
-        table = pd.read_csv(DATADR+DATAFILE)
-        pickle.dump({'table':table},open(DATADR+'scotus_table.p','wb'),-1)
+        table = pd.read_csv(DATADR+self.datafile)
+        pickle.dump({'table':table},open(self.fname,'wb'),-1)
     
     def majVoteTable(self):
         subTable = self.table.loc[:,['caseId','justiceName','majority']]
@@ -108,6 +114,16 @@ class ScotusData(object):
     def justice_names(self):
         justiceNames = np.unique(self.table.justiceName)
         return justiceNames
+    
+    def setup_MQ_score(self):
+        df = pd.read_csv('%s/%s'%(DATADR,'justices.csv'))
+        ref = {}
+        for n in np.unique(df['justiceName']):
+            ref[n] = df['post_mn'].ix[df['justiceName']==n].values
+        self.mqdict = ref
+
+    def MQ_score(self,name):
+        return self.mqdict.get(name,None)
 
     @staticmethod
     def load_conf_report_votes(courtIx):
