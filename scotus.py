@@ -111,6 +111,12 @@ class ScotusData(object):
         issueTable = pd.pivot_table( issueTable,index='caseId',fill_value=np.nan )
         return issueTable
 
+    def termTable(self):
+        termTable = self.table.loc[:,['caseId','term']]
+        termTable = pd.pivot_table( termTable,index='caseId',fill_value=np.nan )
+        return termTable
+
+
     def justice_names(self):
         justiceNames = np.unique(self.table.justiceName)
         return justiceNames
