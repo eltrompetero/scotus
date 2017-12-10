@@ -105,9 +105,18 @@ class ScotusData(object):
         subTable = self.table.loc[:,['caseId','justiceName','vote']]
         voteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
         return voteTable
-
-    def issueTable(self):
-        issueTable = self.table.loc[:,['caseId','issue']]
+    
+    def issueTable(self,detailed=False):
+        """
+        Parameters
+        ----------
+        detailed : bool,False
+            If True, return specific legal issue otherwise return broad legal issue.
+        """
+        if detailed:
+            issueTable = self.table.loc[:,['caseId','issue']]
+        else:
+            issueTable = self.table.loc[:,['caseId','issueArea']]
         issueTable = pd.pivot_table( issueTable,index='caseId',fill_value=np.nan )
         return issueTable
 
