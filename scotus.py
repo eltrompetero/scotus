@@ -15,6 +15,8 @@ NICE_COURT_NAMES = ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',
                     'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger','Connor/Burger',
                     'Scalia/Rehnquist','Souter/Rehnquist','Thomas/Rehnquist','Kennedy/Rehnquist','Breyer/Rehnquist',
                     'Kagan/Roberts']
+SECOND_REHNQUIST_COURT=['JPStevens','SGBreyer','RBGinsburg','DHSouter','AMKennedy',
+                        'SDOConnor','WHRehnquist','AScalia','CThomas']
 
 
 class ConfVotesData(object):
@@ -144,6 +146,26 @@ class ScotusData(object):
 
     def MQ_score(self,name):
         return self.mqdict.get(name,None)
+
+    def second_rehnquist_court(self,return_case_ix=False,return_justices_ix=False):
+        """
+        Parameters
+        ----------
+        return_case_ix : bool,False
+            If True, also return the indices of the full vote matrix that correspond to the subset
+            of cases that we selected out for the Second Rehnquist Court.
+        return_justices_ix : bool,FAlse
+            If True, return the index of the justices in the columns of the vote table.
+        """
+        subTable=self.majVoteTable()['majority'][SECOND_REHNQUIST_COURT]
+        ix=(( (subTable==1)|(subTable==2) ).sum(1)==9).values
+        
+        output=[subTable.iloc[ix]]
+        if return_case_ix:
+            output.append(ix)
+        if return_justices_ix:
+            output.append(np.array([self.majVoteTable()['majority'].columns.get_loc(n) for n in SECOND_REHNQUIST_COURT]))
+        return output
 
     @staticmethod
     def load_conf_report_votes(courtIx):
