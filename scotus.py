@@ -1,6 +1,10 @@
+# =============================================================================================== #
+# Module for loading modern SCOTUS voting data.
+# Author: Eddie Lee, edl56@cornell.edu
+# =============================================================================================== #
 import numpy as np
 import pandas as pd
-import pickle as pickle
+import pickle
 from warnings import warn
 import entropy.entropy as entropy
 import os
@@ -202,87 +206,6 @@ class ScotusData(object):
         fullVotesIx = np.logical_and(np.sum(np.isnan(confv)==0,1)==9, np.sum(np.isnan(finv)==0,1)==9)
 
         return confv,finv,fullVotesIx
-
-    @staticmethod
-    def pairwise_maxent_couplings(courtName,sym,formulation,fullVote=True,conference=False):
-        """
-        Return solutions to pairwise maxent model.
-        2015-08-20
-
-        Params:
-        -------
-        courtName (str)
-            in nice format
-        sym (bool)
-            True returns solutions on symmetrized data
-        formulation (str)
-            '0' or '1' for {0,1} and {-1,1}
-        fullVote (True,bool)
-            in cases where data is missing, return solution on only complete votes if True
-        conference (False,bool)
-            if need conference votes set True
-
-        Returns:
-        --------
-        J
-        """
-        if type(formulation) is int:
-            formulation = str(formulation)
-
-        if courtName in ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',       
-                         'Minton/Vinson',
-                         'Stewart/Warren','Goldberg/Warren','Fortas/Warren','Marshall/Warren',
-                         'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger']:
-            ix = NICE_COURT_NAMES.index(courtName)
-            if conference:
-                if sym:
-                    Js = pickle.load(open(DATADR+'J_conf_and_report_fullVotes.p','rb'))['JConfSym']
-                else:
-                    Js = pickle.load(open(DATADR+'J_conf_and_report_fullVotes.p','rb'))['JConf']
-            else:
-                if sym:
-                    Js = pickle.load(open(DATADR+'J_conf_and_report_fullVotes.p','rb'))['JReportSym']
-                else:
-                    Js = pickle.load(open(DATADR+'J_conf_and_report_fullVotes.p','rb'))['JReport']
-            if formulation=='1':
-                return entropy.convert_params(Js[ix][:9],Js[ix][9:],concat=True,convertTo='11')
-            else:
-                return Js[ix]
-        elif courtName in NICE_COURT_NAMES:
-            J = pickle.load(open(DATADR+'J_by_court.p','rb'))[''.join(courtName.split('/'))]
-            if conference:
-                if sym:
-                    J = J['JconfSym']
-                else:
-                    J = J['Jconf']
-            else:
-                if sym:
-                    J = J['JReportSym']
-                else:
-                    J = J['JReport']
-            if formulation=='1':
-                return entropy.convert_params(J[:9],J[9:],concat=True,convertTo='11')
-            else:
-                return J
-        else:
-            raise Exception("Court not found.")
-    
-    @classmethod
-    def save_couplings(self,name,couplings):
-        """
-        2016-06-03
-
-        Params:
-        -------
-        name (str)
-            String identifying the court. Should include a forward slash between junior and chief justices.
-        couplings (dict)
-            Dictionary with fields 'JConf', 'JConfSym', 'JReport', 'JReportSym'
-        """
-        print("Make sure to append court to the end of NICE_COURT_NAMES.")
-        solns = pickle.load(open(DATADR+'J_by_court.p','rb'))
-        solns[name] = couplings
-        pickle.dump(solns,open(DATADR+'J_by_court.p','wb'),-1)
 
     def oct2015(self):
         """
