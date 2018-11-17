@@ -1,4 +1,4 @@
-from __future__ import division
+
 import pandas as pd
 import hickle,pickle
 import numpy as np
@@ -57,7 +57,7 @@ def setup_canada(keepv2=True):
             courts[-1]['justices'] = [c.split('_')[0] for c in f.columns]
             courts[-1]['votes'] = f.values
     
-    print "Overwriting Canadian court information..."
+    print("Overwriting Canadian court information...")
     pickle.dump({'courts':courts},open('canada_full_court_votes.p','w'),-1)
 
 def setup_vinwar(disp=True):
@@ -65,14 +65,14 @@ def setup_vinwar(disp=True):
     names = np.sort(['mar','fort','gold','bw','stwt','whit','brn','har','mint','clk',
                      'burt','jack','doug','frk','reed','blk','war','rut','mur','vin'])
 
-    print "Unique vote types for column 2"
-    print np.unique(df['votetyp2'].dropna())
+    print("Unique vote types for column 2")
+    print(np.unique(df['votetyp2'].dropna()))
     # Find merits votes.
     mrtsString = ['MRTS','1RTS']
     meritsIx = ((df['votetyp2']==mrtsString[0]) | (df['votetyp2']==mrtsString[1])).values
 
-    print "Unique vote types for column 2"
-    print np.unique(df['votetyp3'].dropna())
+    print("Unique vote types for column 2")
+    print(np.unique(df['votetyp3'].dropna()))
     # Find reports votes.
     rptsIx = (df['votetyp3']=='REPT').values
 
@@ -120,11 +120,11 @@ def setup_vinwar(disp=True):
     confIdeVotes.fillna('',inplace=True)
 
     # Make sure we only have binary votes.
-    print "Confirm that there are only two kinds of votes."
-    print np.unique(rptVotes)
-    print np.unique(rptIdeVotes)
-    print np.unique(confVotes)
-    print np.unique(confIdeVotes)
+    print("Confirm that there are only two kinds of votes.")
+    print(np.unique(rptVotes))
+    print(np.unique(rptIdeVotes))
+    print(np.unique(confVotes))
+    print(np.unique(confIdeVotes))
 
     # Replace votes.
     # deny/affirm -1, grant/reverse 1
@@ -154,10 +154,10 @@ def setup_vinwar(disp=True):
     # Find merits votes in columns 3-7.
     mrtVotes = (np.zeros((len(df),5),dtype=int)-1).astype(object)
 
-    for i in xrange(3,8):
+    for i in range(3,8):
         # Find extra merit votes.
         extraMrtsIx = (df['votetyp%d'%i]=='MRTS').values
-        print "%d merits votes in col %d"%(extraMrtsIx.sum(),i)
+        print("%d merits votes in col %d"%(extraMrtsIx.sum(),i))
         
         # Create an array for the set of justice votes.
         thisVote = []
@@ -229,13 +229,13 @@ def show_bad_mrt_votes(mrtVotes):
     onlyCastVotes = np.array([v for v in onlyCastVotes if check_vote(v)])
 
     # According to vinwar_codebook.pdf, grant/reverse=1 and deny/affirm=2.
-    print "Problematic votes"
-    print np.unique(onlyCastVotes)
-    print ""
+    print("Problematic votes")
+    print(np.unique(onlyCastVotes))
+    print("")
 
 def check_vote(v):
     """Only return False if we have a value of -1."""
-    if type(v) is unicode:
+    if type(v) is str:
         return True
     elif v==-1:
         return False

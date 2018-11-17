@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import cPickle as pickle
+import pickle as pickle
 from warnings import warn
 import entropy.entropy as entropy
 import os
@@ -50,7 +50,7 @@ class ConfVotesData(object):
         self.rptIdeVotesByCourt = data['rptIdeVotesByCourt']
         self.justiceIxByCourt = data['justiceIxByCourt']
         
-        self.courts = self.mrtVotesByCourt.keys()
+        self.courts = list(self.mrtVotesByCourt.keys())
     
     def conf_rpt(self,ctName,ide=True,extraConf=False):
         """
@@ -164,7 +164,8 @@ class ScotusData(object):
         if return_case_ix:
             output.append(ix)
         if return_justices_ix:
-            output.append(np.array([self.majVoteTable()['majority'].columns.get_loc(n) for n in SECOND_REHNQUIST_COURT]))
+            output.append(np.array([self.majVoteTable()['majority'].columns.get_loc(n)
+                                    for n in SECOND_REHNQUIST_COURT]))
         return output
 
     @staticmethod
@@ -188,7 +189,7 @@ class ScotusData(object):
         # Must load voting data from file to see which votes turn into which.
         name = COURT_NAMES[courtIx]
         indata = sio.loadmat(DATADR+'%s_confra_idevotes' %name)
-        for k in indata.keys():
+        for k in list(indata.keys()):
             if k.rfind('all')>=0:
                 if k.rfind('conf')>=0:
                     confv = indata[k].astype(float)
@@ -278,7 +279,7 @@ class ScotusData(object):
         couplings (dict)
             Dictionary with fields 'JConf', 'JConfSym', 'JReport', 'JReportSym'
         """
-        print "Make sure to append court to the end of NICE_COURT_NAMES."
+        print("Make sure to append court to the end of NICE_COURT_NAMES.")
         solns = pickle.load(open(DATADR+'J_by_court.p','rb'))
         solns[name] = couplings
         pickle.dump(solns,open(DATADR+'J_by_court.p','wb'),-1)
@@ -294,5 +295,5 @@ class ScotusData(object):
         return df.ix[:,1:]
 
 if __name__=='__main__':
-    print "Rebasing data from %s"%DATAFILE
+    print("Rebasing data from %s"%DATAFILE)
     scotusdata = ScotusData(rebase=True)
