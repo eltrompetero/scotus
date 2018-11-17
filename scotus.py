@@ -124,10 +124,10 @@ class ScotusData():
         """
 
         if detailed:
-            issueTable = pd.pivot_table( self.table.loc[:,('caseId','issueArea')],
+            issueTable = pd.pivot_table( self.table.loc[:,('caseId','issue')],
                                          index='caseId', fill_value=np.nan, dropna=False )
         else:
-            issueTable = pd.pivot_table( self.table.loc[:,('caseId','issue')],
+            issueTable = pd.pivot_table( self.table.loc[:,('caseId','issueArea')],
                                          index='caseId', fill_value=np.nan, dropna=False )
         return issueTable
 
