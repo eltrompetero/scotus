@@ -66,6 +66,7 @@ class ConfVotesData(object):
         ide (bool=True)
         extraConf (bool=False)
         """
+
         if ide:
             toReturn = [self.confIdeVotesByCourt[ctName],self.rptIdeVotesByCourt[ctName]]
         else:
@@ -76,7 +77,7 @@ class ConfVotesData(object):
         return toReturn
 
 
-class ScotusData(object):
+class ScotusData():
     def __init__(self,rebase=False,legacy=False):
         if legacy:
             self.fname = DATADR+'scotus_table_legacy.p'
@@ -94,48 +95,51 @@ class ScotusData(object):
         """
         Reload data from database from supremecourtdatabase.org
         """
-        table = pd.read_csv(DATADR+self.datafile)
-        pickle.dump({'table':table},open(self.fname,'wb'),-1)
+        table = pd.read_csv(DATADR+self.datafile, encoding='latin1')
+        pickle.dump({'table':table}, open(self.fname,'wb'), -1)
     
-    def majVoteTable(self):
-        subTable = self.table.loc[:,['caseId','justiceName','majority']]
-        majVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+    def maj_vote_table(self):
+        """Votes of each justice by case with majority orientation."""
+        majVoteTable = pd.pivot_table( self.table.loc[:,('caseId','justiceName','majority')],
+                                       columns='justiceName', index='caseId', fill_value=np.nan, dropna=False )
         return majVoteTable
 
-    def dirVoteTable(self):
-        subTable = self.table.loc[:,['caseId','justiceName','direction']]
-        dirVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+    def dir_vote_table(self):
+        """Votes of each justice by case with ideological orientation."""
+        dirVoteTable = pd.pivot_table( self.table.loc[:,('caseId','justiceName','direction')],
+                                       columns='justiceName', index='caseId', fill_value=np.nan, dropna=False )
         return dirVoteTable
     
-    def voteTable(self):
-        subTable = self.table.loc[:,['caseId','justiceName','vote']]
-        voteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+    def vote_table(self):
+        voteTable = pd.pivot_table( self.table.loc[:,('caseId','justiceName','vote')],
+                                    columns='justiceName', index='caseId', fill_value=np.nan, dropna=False )
         return voteTable
     
-    def issueTable(self,detailed=False):
+    def issue_table(self, detailed=False):
         """
         Parameters
         ----------
         detailed : bool,False
             If True, return specific legal issue otherwise return broad legal issue.
         """
+
         if detailed:
-            issueTable = self.table.loc[:,['caseId','issue']]
+            issueTable = pd.pivot_table( self.table.loc[:,('caseId','issueArea')],
+                                         index='caseId', fill_value=np.nan, dropna=False )
         else:
-            issueTable = self.table.loc[:,['caseId','issueArea']]
-        issueTable = pd.pivot_table( issueTable,index='caseId',fill_value=np.nan )
+            issueTable = pd.pivot_table( self.table.loc[:,('caseId','issue')],
+                                         index='caseId', fill_value=np.nan, dropna=False )
         return issueTable
 
-    def termTable(self):
-        termTable = self.table.loc[:,['caseId','term']]
-        termTable = pd.pivot_table( termTable,index='caseId',fill_value=np.nan )
+    def term_table(self):
+        termTable = pd.pivot_table( self.table.loc[:,('caseId','term')],
+                                    index='caseId', fill_value=np.nan, dropna=False )
         return termTable
 
-    def naturalCourt(self):
-        natCourtTable = self.table.loc[:,['caseId','naturalCourt']]
-        natCourtTable = pd.pivot_table( natCourtTable,index='caseId',fill_value=np.nan )
+    def natural_court(self):
+        natCourtTable = pd.pivot_table( self.table.loc[:,('caseId','naturalCourt')],
+                                        index='caseId', fill_value=np.nan, dropna=False )
         return natCourtTable
-
 
     def justice_names(self):
         justiceNames = np.unique(self.table.justiceName)
@@ -145,7 +149,7 @@ class ScotusData(object):
         df = pd.read_csv('%s/%s'%(DATADR,'justices.csv'))
         ref = {}
         for n in np.unique(df['justiceName']):
-            ref[n] = df['post_mn'].ix[df['justiceName']==n].values
+            ref[n] = df['post_mn'].iloc[(df['justiceName']==n).values].values
         self.mqdict = ref
 
     def MQ_score(self,name):
@@ -215,7 +219,7 @@ class ScotusData(object):
         This data is already in the SCDB.
         """
         df = pd.read_csv('%s/%s'%(DATADR,'stat_pack_october_2015.csv'))
-        return df.ix[:,1:]
+        return df.iloc[:,1:]
 
 if __name__=='__main__':
     print("Rebasing data from %s"%DATAFILE)
