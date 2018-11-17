@@ -1,12 +1,11 @@
 import numpy as np
 import pandas as pd
-import cPickle as pickle
+import pickle as pickle
 from warnings import warn
 import entropy.entropy as entropy
 import os
 
 DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus/'
-DATAFILE = 'SCDB_2016_01_justiceCentered_Citation.csv'
 COURT_NAMES = ['waite1','waite2','waite3','FMVinsonVinson','SMintonVinson',         
                'PStewartWarren','AJGoldbergWarren','AFortasWarren','TMarshallWarren', 
                'HABlackmunBurger','WHRehnquistBurger','JPStevensBurger']              
@@ -16,6 +15,8 @@ NICE_COURT_NAMES = ['Waite/Waite','Harlan/Waite','Gray/Waite','Vinson/Vinson',
                     'Blackmun/Burger','Rehnquist/Burger','Stevens/Burger','Connor/Burger',
                     'Scalia/Rehnquist','Souter/Rehnquist','Thomas/Rehnquist','Kennedy/Rehnquist','Breyer/Rehnquist',
                     'Kagan/Roberts']
+SECOND_REHNQUIST_COURT=['JPStevens','SGBreyer','RBGinsburg','DHSouter','AMKennedy',
+                        'SDOConnor','WHRehnquist','AScalia','CThomas']
 
 
 class ConfVotesData(object):
@@ -49,7 +50,7 @@ class ConfVotesData(object):
         self.rptIdeVotesByCourt = data['rptIdeVotesByCourt']
         self.justiceIxByCourt = data['justiceIxByCourt']
         
-        self.courts = self.mrtVotesByCourt.keys()
+        self.courts = list(self.mrtVotesByCourt.keys())
     
     def conf_rpt(self,ctName,ide=True,extraConf=False):
         """
@@ -72,55 +73,100 @@ class ConfVotesData(object):
 
 
 class ScotusData(object):
-    @staticmethod
-    def rebase_data():
+    def __init__(self,rebase=False,legacy=False):
+        if legacy:
+            self.fname = DATADR+'scotus_table_legacy.p'
+            self.datafile = 'SCDB_Legacy_04_justiceCentered_Citation.csv'
+        else:
+            self.fname = DATADR+'scotus_table.p'
+            self.datafile = 'SCDB_2016_01_justiceCentered_Citation.csv'
+
+        if (not os.path.isfile(self.fname)) or rebase:
+            self.rebase_data()
+        self.table = pickle.load(open(self.fname,'rb'))['table']
+        self.setup_MQ_score()
+
+    def rebase_data(self):
         """
         Reload data from database from supremecourtdatabase.org
-        2015-06-27
         """
-        table = pd.read_csv(DATADR+DATAFILE)
-        
-        # Recase table to be caseid by justice vote.
-        # Get the part of the table that we wish to pivot.
-        subTable = table.loc[:,['caseId','justiceName','vote']]
-        voteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
-
-        subTable = table.loc[:,['caseId','justiceName','direction']]
-        dirVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
-
-        subTable = table.loc[:,['caseId','justiceName','majority']]
-        majVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
-        
-        issueTable = table.loc[:,['caseId','issue']]
-        issueTable = pd.pivot_table( issueTable,index='caseId',fill_value=np.nan )
-
-        justiceNames = np.unique(table.justiceName)
-
-        pickle.dump( {'justiceNames':justiceNames}, open(DATADR+'justiceNames.p','wb'),-1 )
-        pickle.dump( {'voteTable':voteTable,'dirVoteTable':dirVoteTable,'majVoteTable':majVoteTable},
-                    open(DATADR+'vote_tables.p','wb'),-1 )
-        pickle.dump( {'issueTable':issueTable},
-                    open(DATADR+'case_info_tables.p','wb'),-1) 
-
-    @staticmethod
-    def majVoteTable():
-        return pickle.load(open(DATADR+'vote_tables.p','rb'))['majVoteTable']
-
-    @staticmethod
-    def dirVoteTable():
-        return pickle.load(open(DATADR+'vote_tables.p','rb'))['dirVoteTable']
+        table = pd.read_csv(DATADR+self.datafile)
+        pickle.dump({'table':table},open(self.fname,'wb'),-1)
     
-    @staticmethod
-    def voteTable():
-        return pickle.load(open(DATADR+'vote_tables.p','rb'))['voteTable']
+    def majVoteTable(self):
+        subTable = self.table.loc[:,['caseId','justiceName','majority']]
+        majVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+        return majVoteTable
 
-    @staticmethod
-    def issueTable():
-        return pickle.load(open(DATADR+'case_info_tables.p','rb'))['issueTable']
+    def dirVoteTable(self):
+        subTable = self.table.loc[:,['caseId','justiceName','direction']]
+        dirVoteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+        return dirVoteTable
+    
+    def voteTable(self):
+        subTable = self.table.loc[:,['caseId','justiceName','vote']]
+        voteTable = pd.pivot_table( subTable, columns='justiceName', index='caseId', fill_value=np.nan )
+        return voteTable
+    
+    def issueTable(self,detailed=False):
+        """
+        Parameters
+        ----------
+        detailed : bool,False
+            If True, return specific legal issue otherwise return broad legal issue.
+        """
+        if detailed:
+            issueTable = self.table.loc[:,['caseId','issue']]
+        else:
+            issueTable = self.table.loc[:,['caseId','issueArea']]
+        issueTable = pd.pivot_table( issueTable,index='caseId',fill_value=np.nan )
+        return issueTable
 
-    @staticmethod
-    def justice_names():
-        return pickle.load(open(DATADR+'justiceNames.p','rb'))['justiceNames']
+    def termTable(self):
+        termTable = self.table.loc[:,['caseId','term']]
+        termTable = pd.pivot_table( termTable,index='caseId',fill_value=np.nan )
+        return termTable
+
+    def naturalCourt(self):
+        natCourtTable = self.table.loc[:,['caseId','naturalCourt']]
+        natCourtTable = pd.pivot_table( natCourtTable,index='caseId',fill_value=np.nan )
+        return natCourtTable
+
+
+    def justice_names(self):
+        justiceNames = np.unique(self.table.justiceName)
+        return justiceNames
+    
+    def setup_MQ_score(self):
+        df = pd.read_csv('%s/%s'%(DATADR,'justices.csv'))
+        ref = {}
+        for n in np.unique(df['justiceName']):
+            ref[n] = df['post_mn'].ix[df['justiceName']==n].values
+        self.mqdict = ref
+
+    def MQ_score(self,name):
+        return self.mqdict.get(name,None)
+
+    def second_rehnquist_court(self,return_case_ix=False,return_justices_ix=False):
+        """
+        Parameters
+        ----------
+        return_case_ix : bool,False
+            If True, also return the indices of the full vote matrix that correspond to the subset
+            of cases that we selected out for the Second Rehnquist Court.
+        return_justices_ix : bool,FAlse
+            If True, return the index of the justices in the columns of the vote table.
+        """
+        subTable=self.majVoteTable()['majority'][SECOND_REHNQUIST_COURT]
+        ix=(( (subTable==1)|(subTable==2) ).sum(1)==9).values
+        
+        output=[subTable.iloc[ix]]
+        if return_case_ix:
+            output.append(ix)
+        if return_justices_ix:
+            output.append(np.array([self.majVoteTable()['majority'].columns.get_loc(n)
+                                    for n in SECOND_REHNQUIST_COURT]))
+        return output
 
     @staticmethod
     def load_conf_report_votes(courtIx):
@@ -143,7 +189,7 @@ class ScotusData(object):
         # Must load voting data from file to see which votes turn into which.
         name = COURT_NAMES[courtIx]
         indata = sio.loadmat(DATADR+'%s_confra_idevotes' %name)
-        for k in indata.keys():
+        for k in list(indata.keys()):
             if k.rfind('all')>=0:
                 if k.rfind('conf')>=0:
                     confv = indata[k].astype(float)
@@ -233,7 +279,7 @@ class ScotusData(object):
         couplings (dict)
             Dictionary with fields 'JConf', 'JConfSym', 'JReport', 'JReportSym'
         """
-        print "Make sure to append court to the end of NICE_COURT_NAMES."
+        print("Make sure to append court to the end of NICE_COURT_NAMES.")
         solns = pickle.load(open(DATADR+'J_by_court.p','rb'))
         solns[name] = couplings
         pickle.dump(solns,open(DATADR+'J_by_court.p','wb'),-1)
@@ -249,6 +295,5 @@ class ScotusData(object):
         return df.ix[:,1:]
 
 if __name__=='__main__':
-    scotusdata = ScotusData()
-    print "Rebasing data from %s"%DATAFILE
-    scotusdata.rebase_data()
+    print("Rebasing data from %s"%DATAFILE)
+    scotusdata = ScotusData(rebase=True)

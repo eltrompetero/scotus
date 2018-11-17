@@ -1,6 +1,6 @@
 # Module for loading supreme court voting data from different databases.
 # 2016-05-16
-from __future__ import division
+
 import pandas as pd
 import hickle,pickle
 import os
