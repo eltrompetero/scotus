@@ -78,6 +78,8 @@ class ConfVotesData(object):
 
 
 class ScotusData():
+    """Wrapper for access to modern SCDB downloaded in 2017 (?). Votes are considered in the {-1,1} basis.
+    """
     def __init__(self,rebase=False,legacy=False):
         if legacy:
             self.fname = DATADR+'scotus_table_legacy.p'
@@ -88,15 +90,22 @@ class ScotusData():
 
         if (not os.path.isfile(self.fname)) or rebase:
             self.rebase_data()
-        self.table = pickle.load(open(self.fname,'rb'))['table']
+        try:
+            self.table = pickle.load(open(self.fname,'rb'))['table']
+        except UnicodeDecodeError:
+            self.rebase_data()
+            self.table = pickle.load(open(self.fname,'rb'))['table']
         self.setup_MQ_score()
 
     def rebase_data(self):
         """
         Reload data from database from supremecourtdatabase.org
         """
+
+        print("Rebasing data...")
         table = pd.read_csv(DATADR+self.datafile, encoding='latin1')
         pickle.dump({'table':table}, open(self.fname,'wb'), -1)
+        print("Done.")
     
     def maj_vote_table(self):
         """Votes of each justice by case with majority orientation."""
