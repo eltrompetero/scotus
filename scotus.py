@@ -102,7 +102,7 @@ class ScotusData():
         Reload data from database from supremecourtdatabase.org
         """
 
-        print("Rebasing data...")
+        print("Rebasing data from %s..."%DATADR+self.datafile)
         table = pd.read_csv(DATADR+self.datafile, encoding='latin1')
         pickle.dump({'table':table}, open(self.fname,'wb'), -1)
         print("Done.")
@@ -128,7 +128,7 @@ class ScotusData():
         """
         Parameters
         ----------
-        detailed : bool,False
+        detailed : bool, False
             If True, return specific legal issue otherwise return broad legal issue.
         """
 
@@ -168,10 +168,10 @@ class ScotusData():
         """
         Parameters
         ----------
-        return_case_ix : bool,False
+        return_case_ix : bool, False
             If True, also return the indices of the full vote matrix that correspond to the subset
             of cases that we selected out for the Second Rehnquist Court.
-        return_justices_ix : bool,FAlse
+        return_justices_ix : bool, FAase
             If True, return the index of the justices in the columns of the vote table.
         """
         subTable=self.majVoteTable()['majority'][SECOND_REHNQUIST_COURT]
@@ -231,5 +231,5 @@ class ScotusData():
         return df.iloc[:,1:]
 
 if __name__=='__main__':
-    print("Rebasing data from %s"%DATAFILE)
     scotusdata = ScotusData(rebase=True)
+    scotusdata = ScotusData(rebase=True,legacy=True)
