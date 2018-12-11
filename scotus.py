@@ -164,26 +164,31 @@ class ScotusData():
     def MQ_score(self,name):
         return self.mqdict.get(name,None)
 
-    def second_rehnquist_court(self,return_case_ix=False,return_justices_ix=False):
+    def second_rehnquist_court(self, return_case_ix=False, return_justices_ix=False):
         """
         Parameters
         ----------
         return_case_ix : bool, False
             If True, also return the indices of the full vote matrix that correspond to the subset
             of cases that we selected out for the Second Rehnquist Court.
-        return_justices_ix : bool, FAase
+        return_justices_ix : bool, False
             If True, return the index of the justices in the columns of the vote table.
+
+        Returns
+        -------
+        tuple
         """
-        subTable=self.majVoteTable()['majority'][SECOND_REHNQUIST_COURT]
+
+        subTable=self.maj_vote_table()['majority'][SECOND_REHNQUIST_COURT]
         ix=(( (subTable==1)|(subTable==2) ).sum(1)==9).values
         
         output=[subTable.iloc[ix]]
         if return_case_ix:
             output.append(ix)
         if return_justices_ix:
-            output.append(np.array([self.majVoteTable()['majority'].columns.get_loc(n)
+            output.append(np.array([self.maj_vote_table()['majority'].columns.get_loc(n)
                                     for n in SECOND_REHNQUIST_COURT]))
-        return output
+        return tuple(output)
 
     @staticmethod
     def load_conf_report_votes(courtIx):
