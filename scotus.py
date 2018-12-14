@@ -164,10 +164,12 @@ class ScotusData():
     def MQ_score(self,name):
         return self.mqdict.get(name,None)
 
-    def second_rehnquist_court(self, return_case_ix=False, return_justices_ix=False):
+    def second_rehnquist_court(self, vote_type='maj', return_case_ix=False, return_justices_ix=False):
         """
         Parameters
         ----------
+        vote_type : str, 'maj'
+            'maj' or 'dir'
         return_case_ix : bool, False
             If True, also return the indices of the full vote matrix that correspond to the subset
             of cases that we selected out for the Second Rehnquist Court.
@@ -177,16 +179,29 @@ class ScotusData():
         Returns
         -------
         tuple
+            (votes,)
+            Only full 9 member votes are included.
         """
-
-        subTable=self.maj_vote_table()['majority'][SECOND_REHNQUIST_COURT]
-        ix=(( (subTable==1)|(subTable==2) ).sum(1)==9).values
         
-        output=[subTable.iloc[ix]]
+        if vote_type=='maj':
+            vote_type = 'majority'
+            subTable = self.maj_vote_table()[vote_type][SECOND_REHNQUIST_COURT]
+            cols = self.maj_vote_table()[vote_type].columns
+        elif vote_type=='dir':
+            vote_type = 'direction'
+            subTable = self.dir_vote_table()[vote_type][SECOND_REHNQUIST_COURT]
+            cols = self.dir_vote_table()[vote_type].columns
+        else:
+            raise NotImplementedError
+
+        # only get full9 member votes
+        ix = (( (subTable==1)|(subTable==2) ).sum(1)==9).values
+        
+        output = [subTable.loc[ix]]
         if return_case_ix:
             output.append(ix)
         if return_justices_ix:
-            output.append(np.array([self.maj_vote_table()['majority'].columns.get_loc(n)
+            output.append(np.array([cols.get_loc(n)
                                     for n in SECOND_REHNQUIST_COURT]))
         return tuple(output)
 
