@@ -5,17 +5,17 @@ import pandas as pd
 import hickle,pickle
 import os
 import numpy as np
-
 DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus'
 
-class Courts(object):
+
+class Courts():
     def __init__(self):
         return
     
     @classmethod
     def get_court(self,name):
         if 'can' in name.lower():
-            courts = pickle.load(open('%s/%s'%(DATADR,'canada_full_court_votes.p'),'r'))['courts']
+            courts = pickle.load(open('%s/%s'%(DATADR,'canada_full_court_votes.p'),'rb'))['courts']
             return courts
         else:
             raise Exception("Invalid court option.")
@@ -28,4 +28,3 @@ class Courts(object):
                                  open('%s/%s'%(DATADR,'canada_full_court_votes.p'),'w'))
         else:
             raise Exception("Invalid court option.")
-
