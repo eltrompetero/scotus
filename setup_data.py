@@ -1,12 +1,16 @@
 # Module for preprocessing raw data sets.
+# Author: Eddie Lee, edlee@alumni.princeton.edu
 import pandas as pd
 import hickle,pickle
 import numpy as np
 from datetime import datetime
+import os
+DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus'
 
-def setup_canada(keepv2=True):
+
+def setup_canada(keepv2=True, min_votes=20):
     """2016-05-16"""
-    df = pd.read_stata('original_data_files/HCJD_Canada.dta',convert_categoricals=False)
+    df = pd.read_stata('%s/original_data_files/HCJD_Canada.dta'%DATADR, convert_categoricals=False)
 
     # Just get the votes. Thes ecolumns end in v1 and v2 (votes on issues 1 and 2).
     colsToKeep = np.sort([c for c in df.columns if ('v1' in c or 'v2' in c)])
@@ -52,16 +56,16 @@ def setup_canada(keepv2=True):
     # Only taking data sets with more than 100 votes...
     courts = []
     for f in fullNatCourtVotes:
-        if f.shape[0]>100:
+        if f.shape[0]>min_votes:
             courts.append({})
             courts[-1]['justices'] = [c.split('_')[0] for c in f.columns]
             courts[-1]['votes'] = f.values
     
     print("Overwriting Canadian court information...")
-    pickle.dump({'courts':courts},open('canada_full_court_votes.p','w'),-1)
+    pickle.dump({'courts':courts}, open('%s/canada_full_court_votes.p'%DATADR,'wb'), -1)
 
 def setup_vinwar(disp=True):
-    df = pickle.load(open('vinwar_stata_EDL.xlsx.p','rb'))['df']
+    df = pd.read_pickle('%s/vinwar_stata_EDL.xlsx.p'%DATADR)
     names = np.sort(['mar','fort','gold','bw','stwt','whit','brn','har','mint','clk',
                      'burt','jack','doug','frk','reed','blk','war','rut','mur','vin'])
 
@@ -182,12 +186,11 @@ def setup_vinwar(disp=True):
     # Binarize the votes.
     bin_mrt_votes(mrtVotes)
 
-
     pickle.dump({'rptVotes':rptVotes,'rptIdeVotes':rptIdeVotes,
                  'confVotes':confVotes,'confIdeVotes':confIdeVotes,
                  'confVoteDate':confVoteDate,'rptVoteDate':rptVoteDate,
                  'mrtVotes':mrtVotes},
-                open('warren_conf_votes.p','wb'),-1)
+                open('%s/warren_conf_votes.p'%DATADR,'wb'),-1)
 
 
 # =================================== #
@@ -261,4 +264,4 @@ def shift_mrt_votes(mrtVotes):
 
 
 if __name__=='__main__':
-    setup_canada()
+    setup_canada(keepv2=False)
