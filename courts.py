@@ -1,8 +1,7 @@
 # Module for loading supreme court voting data from different databases.
 # 2016-05-16
-
 import pandas as pd
-import hickle,pickle
+import hickle, pickle
 import os
 import numpy as np
 DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus'
@@ -21,7 +20,7 @@ class Courts():
             raise Exception("Invalid court option.")
     
     @classmethod
-    def save_court(self,name,courts):
+    def save_court(self, name, courts):
         if 'can' in name.lower():
             os.remove('%s/%s'%(DATADR,'canada_full_court_votes.p'))
             courts = pickle.dump({'courts':courts},
