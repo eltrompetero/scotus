@@ -3,6 +3,6 @@
 from .states import *
 
 
-def test_States():
-    states = States('MD')
-    v = states.vote_table()
+def test_State():
+    state = State('MD')
+    v = state.vote_table()

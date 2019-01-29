@@ -6,11 +6,12 @@ import os
 DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus/'
 
 
-def show_possible_states():
+def list_possible_states():
     files = os.listdir('%s/us_state_court_pickles'%DATADR)
-    print(sorted(files))
+    return sorted([f[:-2] for f in files])
 
-class States():
+
+class State():
     def __init__(self, state):
         """
         Parameters
@@ -22,9 +23,16 @@ class States():
         if not os.path.isfile(self.fname):
             raise Exception("Invalid state.")
 
-    def vote_table(self):
+    def vote_table(self, clean=True, return_code=False):
         """Convert default format into a table where rows are individual cases and each
         justice has a column.  Many entries will be empty.
+        
+        Parameters
+        ----------
+        clean : bool, True
+            If True, returned votes only include 0's and 1's. All other data points are set to -1.
+        return_code : bool, False
+            If True, return code instead of name.
 
         Returns
         -------
@@ -38,24 +46,59 @@ class States():
         
         df = pd.read_pickle(self.fname)
         
-        subTables = []
-        for i in range(1,12):
-            cols = ('LexisNexisCitationNumber',)+('J%d_Vote'%i, 'J%d_Name'%i)
-            subTables.append( df.loc[:,cols] )
-            subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'vote', cols[2]:'name'},
-                                 inplace=True)
-        voteTable = pd.concat(subTables, axis=0)
+        if return_code:
+            subTables = []
+            for i in range(1,12):
+                cols = ('LexisNexisCitationNumber',)+('J%d_Vote'%i, 'J%d_Code'%i)
+                subTables.append( df.loc[:,cols] )
+                subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'vote', cols[2]:'code'},
+                                     inplace=True)
+            voteTable = pd.concat(subTables, axis=0)
 
-        # address some coding bugs
-        if self.state=='MD':
-            voteTable.loc[(voteTable['name']=='J. Murrphy').values,'name'] = 'J. Murphy'
+            voteTable = pd.pivot_table( voteTable,
+                                        columns='code',
+                                        index='citation',
+                                        fill_value=-1,
+                                        dropna=False )['vote']
 
-        voteTable = pd.pivot_table( voteTable,
-                                    columns='name',
-                                    index='citation',
-                                    fill_value=-1,
-                                    dropna=False )
-        return voteTable['vote']
+        else:
+            subTables = []
+            for i in range(1,12):
+                cols = ('LexisNexisCitationNumber',)+('J%d_Vote'%i, 'J%d_Name'%i)
+                subTables.append( df.loc[:,cols] )
+                subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'vote', cols[2]:'name'},
+                                     inplace=True)
+            voteTable = pd.concat(subTables, axis=0)
+
+            # address some data coding bugs
+            if self.state=='ID':
+                voteTable.loc[(voteTable['name']=='Jones').values,'name'] = 'J. Jones'
+            elif self.state=='MD':
+                voteTable.loc[(voteTable['name']=='J. Murrphy').values,'name'] = 'J. Murphy'
+            elif self.state=='OH':
+                voteTable.loc[(voteTable['name']=='Oconnor').values,'name'] = 'OConnor'
+            elif self.state=='MI':
+                voteTable.loc[(voteTable['name']=='294').values,'name'] = 'Brickley'
+                voteTable.loc[(voteTable['name']=='581').values,'name'] = 'Taylor'
+            elif self.state=='KS':
+                voteTable.loc[(voteTable['name']=='Gernon ').values,'name'] = 'Gernon'
+            elif self.state=='SC':
+                voteTable.loc[(voteTable['name']=='Burrnett').values,'name'] = 'Burnett'
+
+            voteTable = pd.pivot_table( voteTable,
+                                        columns='name',
+                                        index='citation',
+                                        fill_value=-1,
+                                        dropna=False )['vote']
+
+            # Throw out any blank justice names
+            voteTable = voteTable.loc[:,voteTable.columns!='']
+
+        if not clean:
+            return voteTable
+
+        voteTable[((voteTable!=0)|(voteTable!=1)).values] = -1
+        return voteTable
 
     def _vote_cols(self):
         cols = ()
