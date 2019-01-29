@@ -97,7 +97,7 @@ class State():
         if not clean:
             return voteTable
 
-        voteTable[((voteTable!=0)|(voteTable!=1)).values] = -1
+        voteTable[((voteTable!=0)&(voteTable!=1)).values] = -1
         return voteTable
 
     def _vote_cols(self):
