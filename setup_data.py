@@ -261,7 +261,24 @@ def shift_mrt_votes(mrtVotes):
     mrtVotes = mrtVotes[:,:3]
     return mrtVotes
 
+def setup_us_states():
+    """Load master file and split the file by states. Pickles are saved into the
+    state_court_pickles directory."""
+    
+    # try loading pickle first
+    if os.path.isfile('%s/state_supreme_court_v2.p'%DATADR):
+        df = pd.read_pickle('%s/state_supreme_court_v2.p'%DATADR)
+    else:
+        print("Unable to find pickled stat file. Loading from stata...")
+        df = pd.read_stata('%s/state_supreme_court_v2.dta'%DATADR)
+        print("Caching to pickle...")
+        df.to_pickle('%s/state_supreme_court_v2.p'%DATADR)
+    assert np.unique(df['state']).size==52
 
+    for state in np.unique(df['state']):
+        fname = '%s/us_state_court_pickles/%s.p'%(DATADR,state)
+        print("Saving %s."%fname)
+        df[(df['state']==state).values].to_pickle(fname)
 
 if __name__=='__main__':
     setup_canada(keepv2=False)

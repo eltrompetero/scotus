@@ -45,6 +45,7 @@ class ConfVotesData(object):
         --------
         conf_rpt()
         """
+
         data = pickle.load(open(DATADR+'/warren_conf_votes_bycourt.p','rb'))
         self.mrtVotesByCourt = data['mrtVotesByCourt']
         self.confVotesByCourt = data['confVotesByCourt']
@@ -56,7 +57,7 @@ class ConfVotesData(object):
         
         self.courts = list(self.mrtVotesByCourt.keys())
     
-    def conf_rpt(self,ctName,ide=True,extraConf=False):
+    def conf_rpt(self, ctName, ide=True, extraConf=False):
         """
         Return a pair of final conference and report votes for a specified court.
 
