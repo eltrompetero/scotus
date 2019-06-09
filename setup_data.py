@@ -375,7 +375,11 @@ def shift_mrt_votes(mrtVotes):
 
 def setup_us_states():
     """Load master file and split the file by states. Pickles are saved into the
-    state_court_pickles directory."""
+    state_court_pickles directory.
+    
+    State Supreme Court Data Project
+    http://www.ruf.rice.edu/~pbrace/statecourt/
+    """
     
     # try loading pickle first
     if os.path.isfile('%s/state_supreme_court_v2.p'%DATADR):
