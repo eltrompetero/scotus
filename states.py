@@ -1,5 +1,7 @@
+# ===================================================================================== #
 # Wrapper for loading US state Supreme Court data.
 # Author: Eddie Lee, edlee@alumni.princeton.edu
+# ===================================================================================== #
 import pandas as pd
 import numpy as np
 import os
@@ -18,6 +20,7 @@ class State():
         ----------
         state : str
         """
+
         self.state = state
         self.fname = '%s/us_state_court_pickles/%s.p'%(DATADR,self.state)
         if not os.path.isfile(self.fname):
