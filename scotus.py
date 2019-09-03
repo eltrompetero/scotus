@@ -152,6 +152,9 @@ class ScotusData():
         return natCourtTable
 
     def justice_names(self):
+        """All justice names ordered alphabetically.
+        """
+
         justiceNames = np.unique(self.table.justiceName)
         return justiceNames
     
@@ -165,8 +168,13 @@ class ScotusData():
     def MQ_score(self,name):
         return self.mqdict.get(name,None)
 
-    def second_rehnquist_court(self, vote_type='maj', return_case_ix=False, return_justices_ix=False):
-        """
+    def second_rehnquist_court(self,
+                               vote_type='maj',
+                               return_case_ix=False,
+                               return_justices_ix=False,
+                               sorted_by_mq=False):
+        """Voting record for Second Rehnquist Court (1994-2005). Data set size K=909 if maj chosen.
+
         Parameters
         ----------
         vote_type : str, 'maj'
@@ -176,6 +184,8 @@ class ScotusData():
             of cases that we selected out for the Second Rehnquist Court.
         return_justices_ix : bool, False
             If True, return the index of the justices in the columns of the vote table.
+        sorted_by_mq : bool, False
+            If True, sorted from liberal to conservative.
 
         Returns
         -------
@@ -195,9 +205,12 @@ class ScotusData():
         else:
             raise NotImplementedError
 
-        # only get full9 member votes
+        # only get full 9 member votes
         ix = (( (subTable==1)|(subTable==2) ).sum(1)==9).values
         
+        if sorted_by_mq:
+            subTable = subTable.iloc[:,[0,2,3,1,5,4,6,7,8]]
+
         output = [subTable.loc[ix]]
         if return_case_ix:
             output.append(ix)
