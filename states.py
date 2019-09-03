@@ -26,16 +26,20 @@ class State():
         if not os.path.isfile(self.fname):
             raise Exception("Invalid state.")
 
-    def vote_table(self, clean=True, return_code=False):
+    def vote_table(self, clean=True, return_code=False, return_year=False):
         """Convert default format into a table where rows are individual cases and each
         justice has a column.  Many entries will be empty.
         
         Parameters
         ----------
         clean : bool, True
-            If True, returned votes only include 0's and 1's. All other data points are set to -1.
+            If True, returned votes only include 0's and 1's. All other data points are
+            set to -1.
         return_code : bool, False
             If True, return justice code instead of justice name.
+        return_year : bool, False
+            If True, return table of years per citation. Access year values as ndarray
+            with X['year'].values.
 
         Returns
         -------
@@ -45,6 +49,7 @@ class State():
              1, Majority
              2, Recused
              3, Not participating
+        pd.DataFrame
         """
         
         df = pd.read_pickle(self.fname)
@@ -52,13 +57,13 @@ class State():
         if return_code:
             subTables = []
             for i in range(1,12):
-                cols = ('LexisNexisCitationNumber',)+('J%d_Vote'%i, 'J%d_Code'%i)
+                cols = ('LexisNexisCitationNumber','Year')+('J%d_Vote'%i, 'J%d_Code'%i)
                 subTables.append( df.loc[:,cols] )
-                subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'vote', cols[2]:'code'},
+                subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'year', cols[2]:'vote', cols[3]:'code'},
                                      inplace=True)
-            voteTable = pd.concat(subTables, axis=0)
+            fullTable = pd.concat(subTables, axis=0)
 
-            voteTable = pd.pivot_table( voteTable,
+            voteTable = pd.pivot_table( fullTable,
                                         columns='code',
                                         index='citation',
                                         fill_value=-1,
@@ -67,28 +72,28 @@ class State():
         else:
             subTables = []
             for i in range(1,12):
-                cols = ('LexisNexisCitationNumber',)+('J%d_Vote'%i, 'J%d_Name'%i)
+                cols = ('LexisNexisCitationNumber','Year')+('J%d_Vote'%i, 'J%d_Name'%i)
                 subTables.append( df.loc[:,cols] )
-                subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'vote', cols[2]:'name'},
+                subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'year', cols[2]:'vote', cols[3]:'name'},
                                      inplace=True)
-            voteTable = pd.concat(subTables, axis=0)
+            fullTable = pd.concat(subTables, axis=0)
 
             # address some data coding bugs
             if self.state=='ID':
-                voteTable.loc[(voteTable['name']=='Jones').values,'name'] = 'J. Jones'
+                fullTable.loc[(fullTable['name']=='Jones').values,'name'] = 'J. Jones'
             elif self.state=='MD':
-                voteTable.loc[(voteTable['name']=='J. Murrphy').values,'name'] = 'J. Murphy'
+                fullTable.loc[(fullTable['name']=='J. Murrphy').values,'name'] = 'J. Murphy'
             elif self.state=='OH':
-                voteTable.loc[(voteTable['name']=='Oconnor').values,'name'] = 'OConnor'
+                fullTable.loc[(fullTable['name']=='Oconnor').values,'name'] = 'OConnor'
             elif self.state=='MI':
-                voteTable.loc[(voteTable['name']=='294').values,'name'] = 'Brickley'
-                voteTable.loc[(voteTable['name']=='581').values,'name'] = 'Taylor'
+                fullTable.loc[(fullTable['name']=='294').values,'name'] = 'Brickley'
+                fullTable.loc[(fullTable['name']=='581').values,'name'] = 'Taylor'
             elif self.state=='KS':
-                voteTable.loc[(voteTable['name']=='Gernon ').values,'name'] = 'Gernon'
+                fullTable.loc[(fullTable['name']=='Gernon ').values,'name'] = 'Gernon'
             elif self.state=='SC':
-                voteTable.loc[(voteTable['name']=='Burrnett').values,'name'] = 'Burnett'
+                fullTable.loc[(fullTable['name']=='Burrnett').values,'name'] = 'Burnett'
 
-            voteTable = pd.pivot_table( voteTable,
+            voteTable = pd.pivot_table( fullTable,
                                         columns='name',
                                         index='citation',
                                         fill_value=-1,
@@ -101,6 +106,10 @@ class State():
             return voteTable
 
         voteTable[((voteTable!=0)&(voteTable!=1)).values] = -1
+        if return_year:
+            year = pd.pivot_table( fullTable, index='citation' )
+            assert len(year)==len(voteTable)
+            return voteTable, year
         return voteTable
 
     @classmethod
