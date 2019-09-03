@@ -109,6 +109,9 @@ class State():
         if return_year:
             year = pd.pivot_table( fullTable, index='citation' )
             assert len(year)==len(voteTable)
+            #import re
+            #year = np.array([int(i[i.find(';')+1:i.find(';')+5]) for i in voteTable.index])
+            #year = np.array([int(next(re.finditer('[0-9]{4}',i)).group(0)) for i in voteTable.index])
             return voteTable, year
         return voteTable
 
