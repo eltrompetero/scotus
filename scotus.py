@@ -79,9 +79,10 @@ class ConfVotesData(object):
 
 
 class ScotusData():
-    """Wrapper for access to modern SCDB downloaded in 2017 (?). Votes are considered in the {-1,1} basis.
+    """Wrapper for access to modern SCDB downloaded in 2017 (?). Votes are considered
+    in the {-1,1} basis.
     """
-    def __init__(self,rebase=False,legacy=False):
+    def __init__(self, rebase=False, legacy=False):
         if legacy:
             self.fname = DATADR+'scotus_table_legacy.p'
             self.datafile = 'SCDB_Legacy_04_justiceCentered_Citation.csv'
@@ -172,28 +173,31 @@ class ScotusData():
                                vote_type='maj',
                                return_case_ix=False,
                                return_justices_ix=False,
-                               sorted_by_mq=False):
-        """Voting record for Second Rehnquist Court (1994-2005). Data set size K=909 if maj chosen.
+                               sorted_by_mq=False,
+                               n_voters=9):
+        """Voting record for Second Rehnquist Court (1994-2005). Data set size K=909
+        if maj chosen.
 
         Parameters
         ----------
         vote_type : str, 'maj'
             'maj' or 'dir'
         return_case_ix : bool, False
-            If True, also return the indices of the full vote matrix that correspond to the subset
-            of cases that we selected out for the Second Rehnquist Court.
+            If True, also return the indices of the full vote matrix that correspond
+            to the subset of cases that we selected out for the Second Rehnquist
+            Court.
         return_justices_ix : bool, False
             If True, return the index of the justices in the columns of the vote table.
         sorted_by_mq : bool, False
             If True, sorted from liberal to conservative.
+        n_voters : int, 9
+            No. of present voters. By default only consider votes with all 9 members.
 
         Returns
         -------
         tuple
             (votes,)
-            Only full 9 member votes are included.
         """
-        
         if vote_type=='maj':
             vote_type = 'majority'
             subTable = self.maj_vote_table()[vote_type][SECOND_REHNQUIST_COURT]
@@ -205,8 +209,18 @@ class ScotusData():
         else:
             raise NotImplementedError
 
-        # only get full 9 member votes
-        ix = (( (subTable==1)|(subTable==2) ).sum(1)==9).values
+        # only get votes with n_voters members
+        if n_voters==9:
+            ix = (( (subTable==1)|(subTable==2) ).sum(1)==n_voters).values
+        else:
+            # must bound by time of votes if considering votes with less than 9 members
+            # using dates of Breyer's appointment and appt of Roberts
+            ix = ((pd.to_datetime(self.table.dateDecision) >= '1994-08-03') &
+                  (pd.to_datetime(self.table.dateDecision) < '2005-09-29')).values
+            case_id = np.unique(self.table['caseId'].loc[ix])
+
+            ix = ((( (subTable==1)|(subTable==2) ).sum(1)==n_voters).values &
+                  [True if i in case_id else False for i in subTable.index])
         
         if sorted_by_mq:
             subTable = subTable.iloc[:,[0,2,3,1,5,4,6,7,8]]
