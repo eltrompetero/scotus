@@ -1,7 +1,7 @@
-# =============================================================================================== #
+# ====================================================================================== #
 # Module for loading modern SCOTUS voting data.
 # Author: Eddie Lee, edl56@cornell.edu
-# =============================================================================================== #
+# ====================================================================================== #
 import numpy as np
 import pandas as pd
 import pickle
@@ -82,13 +82,21 @@ class ScotusData():
     """Wrapper for access to modern SCDB downloaded in 2017 (?). Votes are considered
     in the {-1,1} basis.
     """
-    def __init__(self, rebase=False, legacy=False):
+    def __init__(self, rebase=False, legacy=False, year=2022):
+        """
+        Parameters
+        ----------
+        rebase : bool, False
+        legacy : bool, False
+        year : int, 2022
+            Make sure to set rebase=True if fetching a different year.
+        """
         if legacy:
             self.fname = DATADR+'scotus_table_legacy.p'
             self.datafile = 'SCDB_Legacy_04_justiceCentered_Citation.csv'
         else:
             self.fname = DATADR+'scotus_table.p'
-            self.datafile = 'SCDB_2016_01_justiceCentered_Citation.csv'
+            self.datafile = f'SCDB_{year}_01_justiceCentered_Citation.csv'
 
         if (not os.path.isfile(self.fname)) or rebase:
             self.rebase_data()
@@ -100,10 +108,8 @@ class ScotusData():
         self.setup_MQ_score()
 
     def rebase_data(self):
+        """Reload data from database from supremecourtdatabase.org
         """
-        Reload data from database from supremecourtdatabase.org
-        """
-
         print("Rebasing data from %s..."%DATADR+self.datafile)
         table = pd.read_csv(DATADR+self.datafile, encoding='latin1')
         pickle.dump({'table':table}, open(self.fname,'wb'), -1)
@@ -112,7 +118,10 @@ class ScotusData():
     def maj_vote_table(self):
         """Votes of each justice by case with majority orientation."""
         majVoteTable = pd.pivot_table( self.table.loc[:,('caseId','justiceName','majority')],
-                                       columns='justiceName', index='caseId', fill_value=np.nan, dropna=False )
+                                       columns='justiceName',
+                                       index='caseId',
+                                       fill_value=np.nan,
+                                       dropna=False )
         return majVoteTable
 
     def dir_vote_table(self):
