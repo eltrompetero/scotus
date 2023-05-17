@@ -162,9 +162,7 @@ class ScotusData():
         return natCourtTable
 
     def justice_names(self):
-        """All justice names ordered alphabetically.
-        """
-
+        """All justice names ordered alphabetically."""
         justiceNames = np.unique(self.table.justiceName)
         return justiceNames
     
@@ -172,11 +170,15 @@ class ScotusData():
         df = pd.read_csv('%s/%s'%(DATADR,'justices.csv'))
         ref = {}
         for n in np.unique(df['justiceName']):
-            ref[n] = df['post_mn'].iloc[(df['justiceName']==n).values].values
+            ref[n] = (df['term'].iloc[(df['justiceName']==n).values].values,
+                      df['post_mn'].iloc[(df['justiceName']==n).values].values)
         self.mqdict = ref
 
-    def MQ_score(self,name):
-        return self.mqdict.get(name,None)
+    def MQ_score(self, name, year=None):
+        if not year is None:
+            ix = self.mqdict.get(name, None)[0].tolist().index(year)
+            return self.mqdict.get(name, None)[1][ix]
+        return self.mqdict.get(name, None)[1]
 
     def second_rehnquist_court(self,
                                vote_type='maj',
