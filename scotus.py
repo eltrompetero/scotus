@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pickle
 from warnings import warn
-import entropy.entropy as entropy
 import os
 
 DATADR = os.path.expanduser('~')+'/Dropbox/Research/data_sets/scotus/'
@@ -94,7 +93,6 @@ class ScotusData():
         else:
             self.fname = DATADR+'scotus_table.p'
             self.datafile = f'SCDB_{year}_01_justiceCentered_Citation.csv'
-            self.datafile = f'SCDB_{year}_01_justiceCentered_Citation.csv'
 
         if (not os.path.isfile(self.fname)) or rebase:
             self.rebase_data()
@@ -116,22 +114,22 @@ class ScotusData():
     
     def maj_vote_table(self):
         """Votes of each justice by case with majority orientation."""
-        majVoteTable = pd.pivot_table( self.table.loc[:,('caseId','justiceName','majority')],
-                                       columns='justiceName',
-                                       index='caseId',
-                                       fill_value=np.nan,
-                                       dropna=False )
+        majVoteTable = pd.pivot_table(self.table.loc[:,('caseId','justiceName','majority')],
+                                      columns='justiceName',
+                                      index='caseId',
+                                      fill_value=np.nan,
+                                      dropna=False )
         return majVoteTable
 
     def dir_vote_table(self):
         """Votes of each justice by case with ideological orientation."""
-        dirVoteTable = pd.pivot_table( self.table.loc[:,('caseId','justiceName','direction')],
-                                       columns='justiceName', index='caseId', fill_value=np.nan, dropna=False )
+        dirVoteTable = pd.pivot_table(self.table.loc[:,('caseId','justiceName','direction')],
+                                      columns='justiceName', index='caseId', fill_value=np.nan, dropna=False)
         return dirVoteTable
     
     def vote_table(self):
-        voteTable = pd.pivot_table( self.table.loc[:,('caseId','justiceName','vote')],
-                                    columns='justiceName', index='caseId', fill_value=np.nan, dropna=False )
+        voteTable = pd.pivot_table(self.table.loc[:,('caseId','justiceName','vote')],
+                                   columns='justiceName', index='caseId', fill_value=np.nan, dropna=False)
         return voteTable
     
     def issue_table(self, detailed=False):
@@ -151,13 +149,13 @@ class ScotusData():
         return issueTable
 
     def term_table(self):
-        termTable = pd.pivot_table( self.table.loc[:,('caseId','term')],
-                                    index='caseId', fill_value=np.nan, dropna=False )
+        termTable = pd.pivot_table(self.table.loc[:,('caseId', 'term')],
+                                   index='caseId', fill_value=np.nan, dropna=False)
         return termTable
 
     def natural_court(self):
-        natCourtTable = pd.pivot_table( self.table.loc[:,('caseId','naturalCourt')],
-                                        index='caseId', fill_value=np.nan, dropna=False )
+        natCourtTable = pd.pivot_table(self.table.loc[:,('caseId', 'naturalCourt')],
+                                       index='caseId', fill_value=np.nan, dropna=False)
         return natCourtTable
 
     def justice_names(self):
