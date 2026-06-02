@@ -13,6 +13,26 @@ system:
 Shared internals: `_config.py` (data directory) and `_courts_common.py` (natural-court
 extraction).
 
+## Repository structure
+
+```
+scotus/
+├── scotus.py          # U.S. Supreme Court: ScotusData (SCDB) + ConferenceReportVotes + Warren setup
+├── high_courts.py     # International high courts: HighCourt (Canada/Australia/India) + setup
+├── states.py          # U.S. state supreme courts: State, list_possible_states + setup
+├── _config.py         # shared DATADR (env-overridable via SCOTUS_DATA_DIR)
+├── _courts_common.py  # shared natural-court extraction helpers
+├── __init__.py        # public exports
+├── requirements.txt   # numpy, pandas, scipy
+├── test_scotus.py     # tests for ScotusData vote tables
+├── test_states.py     # tests for State / natural-court extraction
+└── test_high_courts.py# smoke test for HighCourt
+```
+
+Each access module pairs a data wrapper (read pickled/CSV data into tidy tables) with the
+`setup_*` routines that build those pickles from raw sources. Data itself lives outside the
+repo, in the directory named by `DATADR` (see below) — the code ships without bundled data.
+
 Modern SCOTUS data is from the Supreme Court Database Project
 [http://supremecourtdatabase.org]. U.S. state data is from the State Supreme Court Data
 Project [http://www.ruf.rice.edu/~pbrace/statecourt/].
