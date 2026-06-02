@@ -1,16 +1,45 @@
-# ===================================================================================== #
-# Wrapper for loading US state Supreme Court data.
+# ====================================================================================== #
+# U.S. state supreme court voting data (State Supreme Court Data Project).
+# Provides access to the per-state pickled records plus the setup routine that splits the
+# master file into per-state pickles.
 # Author: Eddie Lee, edlee@alumni.princeton.edu
-# ===================================================================================== #
-import pandas as pd
-import numpy as np
+# ====================================================================================== #
 import os
-DATADR = os.path.expanduser('~')+'/Dropbox/Research/py_lib/data_sets/scotus/'
+import logging
+
+import numpy as np
+import pandas as pd
+
+from ._config import DATADR
+from ._courts_common import extract_natural_courts
+
+log = logging.getLogger(__name__)
+
+# Maximum number of justice slots per case in the source schema (columns J1..J11).
+N_JUSTICE_SLOTS = 11
+
+# Vote codes used in the source data.
+NO_DATA = -1
+MINORITY = 0
+MAJORITY = 1
+RECUSED = 2
+NOT_PARTICIPATING = 3
+
+# Known name-coding errors in the source data, keyed by state then {wrong: right}.
+_NAME_FIXES = {
+    'ID': {'Jones': 'J. Jones'},
+    'MD': {'J. Murrphy': 'J. Murphy'},
+    'OH': {'Oconnor': 'OConnor'},
+    'MI': {'294': 'Brickley', '581': 'Taylor'},
+    'KS': {'Gernon ': 'Gernon'},
+    'SC': {'Burrnett': 'Burnett'},
+}
 
 
 def list_possible_states():
-    files = os.listdir('%s/us_state_court_pickles'%DATADR)
-    return sorted([f[:-2] for f in files])
+    """Sorted list of state codes for which a pickle is available."""
+    files = os.listdir(os.path.join(DATADR, 'us_state_court_pickles'))
+    return sorted(f[:-2] for f in files)
 
 
 class State():
@@ -19,148 +48,97 @@ class State():
         Parameters
         ----------
         state : str
+            Two-letter state code.
         """
-
         self.state = state
-        self.fname = '%s/us_state_court_pickles/%s.p'%(DATADR,self.state)
+        self.fname = os.path.join(DATADR, 'us_state_court_pickles', '%s.p' % state)
         if not os.path.isfile(self.fname):
-            raise Exception("Invalid state.")
+            raise ValueError("Invalid state: %r" % state)
 
     def vote_table(self, clean=True, return_code=False, return_year=False):
-        """Convert default format into a table where rows are individual cases and each
-        justice has a column.  Many entries will be empty.
-        
+        """Convert the default format into a table where rows are individual cases and each
+        justice has a column. Many entries will be empty.
+
         Parameters
         ----------
         clean : bool, True
-            If True, returned votes only include 0's and 1's. All other data points are
-            set to -1.
+            If True, returned votes only include 0's and 1's; all other values become -1.
         return_code : bool, False
-            If True, return justice code instead of justice name.
+            If True, label columns by justice code instead of justice name.
         return_year : bool, False
-            If True, return table of years per citation. Access year values as ndarray
-            with X['year'].values.
+            If True, also return a table of years per citation (access with X['year'].values).
 
         Returns
         -------
         pd.DataFrame
-            -1, No data
-             0, Minority
-             1, Majority
-             2, Recused
-             3, Not participating
-        pd.DataFrame
+            Vote codes: -1 no data, 0 minority, 1 majority, 2 recused, 3 not participating.
+        pd.DataFrame, optional
+            Years, if return_year is True.
         """
-        
         df = pd.read_pickle(self.fname)
-        
-        if return_code:
-            subTables = []
-            for i in range(1,12):
-                cols = ('LexisNexisCitationNumber','Year')+('J%d_Vote'%i, 'J%d_Code'%i)
-                subTables.append( df.loc[:,cols] )
-                subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'year', cols[2]:'vote', cols[3]:'code'},
-                                     inplace=True)
-            fullTable = pd.concat(subTables, axis=0)
 
-            voteTable = pd.pivot_table( fullTable,
-                                        columns='code',
-                                        index='citation',
-                                        fill_value=-1,
-                                        dropna=False )['vote']
+        label_col, label_key = ('J%d_Code', 'code') if return_code else ('J%d_Name', 'name')
+        subtables = []
+        for i in range(1, N_JUSTICE_SLOTS + 1):
+            cols = ('LexisNexisCitationNumber', 'Year', 'J%d_Vote' % i, label_col % i)
+            sub = df.loc[:, cols].rename(columns={cols[0]: 'citation', cols[1]: 'year',
+                                                  cols[2]: 'vote', cols[3]: label_key})
+            subtables.append(sub)
+        fullTable = pd.concat(subtables, axis=0)
 
-        else:
-            subTables = []
-            for i in range(1,12):
-                cols = ('LexisNexisCitationNumber','Year')+('J%d_Vote'%i, 'J%d_Name'%i)
-                subTables.append( df.loc[:,cols] )
-                subTables[-1].rename(columns={cols[0]:'citation', cols[1]:'year', cols[2]:'vote', cols[3]:'name'},
-                                     inplace=True)
-            fullTable = pd.concat(subTables, axis=0)
+        if not return_code:
+            # Address some data-coding bugs in the justice names.
+            for wrong, right in _NAME_FIXES.get(self.state, {}).items():
+                fullTable.loc[(fullTable['name'] == wrong).values, 'name'] = right
 
-            # address some data coding bugs
-            if self.state=='ID':
-                fullTable.loc[(fullTable['name']=='Jones').values,'name'] = 'J. Jones'
-            elif self.state=='MD':
-                fullTable.loc[(fullTable['name']=='J. Murrphy').values,'name'] = 'J. Murphy'
-            elif self.state=='OH':
-                fullTable.loc[(fullTable['name']=='Oconnor').values,'name'] = 'OConnor'
-            elif self.state=='MI':
-                fullTable.loc[(fullTable['name']=='294').values,'name'] = 'Brickley'
-                fullTable.loc[(fullTable['name']=='581').values,'name'] = 'Taylor'
-            elif self.state=='KS':
-                fullTable.loc[(fullTable['name']=='Gernon ').values,'name'] = 'Gernon'
-            elif self.state=='SC':
-                fullTable.loc[(fullTable['name']=='Burrnett').values,'name'] = 'Burnett'
-
-            voteTable = pd.pivot_table( fullTable,
-                                        columns='name',
-                                        index='citation',
-                                        fill_value=-1,
-                                        dropna=False )['vote']
-
-            # Throw out any blank justice names
-            voteTable = voteTable.loc[:,voteTable.columns!='']
+        voteTable = pd.pivot_table(fullTable, columns=label_key, index='citation',
+                                   fill_value=NO_DATA, dropna=False)['vote']
+        if not return_code:
+            # Throw out any blank justice names.
+            voteTable = voteTable.loc[:, voteTable.columns != '']
 
         if not clean:
             return voteTable
 
-        voteTable[((voteTable!=0)&(voteTable!=1)).values] = -1
+        voteTable[((voteTable != MINORITY) & (voteTable != MAJORITY)).values] = NO_DATA
         if return_year:
-            year = pd.pivot_table( fullTable, index='citation' )
-            assert len(year)==len(voteTable)
-            #import re
-            #year = np.array([int(i[i.find(';')+1:i.find(';')+5]) for i in voteTable.index])
-            #year = np.array([int(next(re.finditer('[0-9]{4}',i)).group(0)) for i in voteTable.index])
+            year = pd.pivot_table(fullTable, index='citation')
+            assert len(year) == len(voteTable)
             return voteTable, year
         return voteTable
 
     @classmethod
     def extract_nat_courts(cls, X, only_full_votes=True, threshold_votes='default'):
         """Get indices for unique natural courts identified by unique subsets of voters.
-
-        Parameters
-        ----------
-        X : ndarray or pd.DataFrame
-            Formatted as such returned by cls.vote_table().
-        only_full_votes : bool, True
-            If True, only keep votes where full courts vote (indicated by the max subset size).
-        threshold_votes : int or 'default', 'default'
-            int will specify a specific number of votes
-            'default' returns courts with at least 2**n votes
-            None or False applies no threshold
-
-        Returns
-        -------
-        tuples 
-            (indices of cols that belong to nat courts, no. of votes)
+        See _courts_common.extract_natural_courts for details.
         """
-        
-        if type(X) is pd.DataFrame:
-            X = X.values
-        assert frozenset(np.unique(X))<=frozenset((-1,0,1,2,3))
-
-        natCourts = [np.where(i)[0].tolist() for i in np.unique(X>-1,axis=0)]
-        if only_full_votes:
-            mx = max([len(nc) for nc in natCourts])
-            natCourts = [i for i in natCourts if len(i)==mx]
-        else:
-            natCourts = [i for i in natCourts]
-
-        # find nat courts with longest records
-        voteCounts = np.zeros(len(natCourts))
-        for i,nc in enumerate(natCourts):
-            voteCounts[i] = (X[:,nc]>-1).all(1).sum()
-        
-        if not threshold_votes:
-            return list(zip(natCourts, voteCounts))
-        if threshold_votes=='default':
-            assert only_full_votes, 'Default for threshold_votes can only be set with only_full_votes switch.'
-            return [(i,j) for i,j in zip(natCourts, voteCounts) if j>=2**len(natCourts[0])]
-        return [(i,j) for i,j in zip(natCourts, voteCounts) if j>=threshold_votes]
+        return extract_natural_courts(X, only_full_votes=only_full_votes,
+                                      threshold_votes=threshold_votes)
 
     def _vote_cols(self):
+        """Source column names (vote, code, name) for every justice slot."""
         cols = ()
-        for i in range(1,12):
-            cols += ('J%d_Vote'%i, 'J%d_Code'%i, 'J%d_Name'%i)
+        for i in range(1, N_JUSTICE_SLOTS + 1):
+            cols += ('J%d_Vote' % i, 'J%d_Code' % i, 'J%d_Name' % i)
         return cols
+
+
+def setup_us_states():
+    """Load the master file and split it by state into us_state_court_pickles/.
+
+    State Supreme Court Data Project: http://www.ruf.rice.edu/~pbrace/statecourt/
+    """
+    cached = os.path.join(DATADR, 'state_supreme_court_v2.p')
+    if os.path.isfile(cached):
+        df = pd.read_pickle(cached)
+    else:
+        log.info("Unable to find pickled stat file. Loading from stata...")
+        df = pd.read_stata(os.path.join(DATADR, 'state_supreme_court_v2.dta'))
+        log.info("Caching to pickle...")
+        df.to_pickle(cached)
+    assert np.unique(df['state']).size == 52, "Expected 50 states + DC + national."
+
+    for state in np.unique(df['state']):
+        fname = os.path.join(DATADR, 'us_state_court_pickles', '%s.p' % state)
+        log.info("Saving %s.", fname)
+        df[(df['state'] == state).values].to_pickle(fname)
